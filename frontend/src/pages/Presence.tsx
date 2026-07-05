@@ -134,7 +134,7 @@ export default function Presence() {
                     {w.first_name} {w.last_name}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {w.job_title || "—"} · {w.type}
+                    {w.type}
                   </Text>
                   <Text size="xs" c="gray">
                     {w.start_date ? `Start: ${w.start_date}` : "No start date"}

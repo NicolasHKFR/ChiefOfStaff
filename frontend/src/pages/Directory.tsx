@@ -1,8 +1,9 @@
-import { ActionIcon, Badge, Button, Card, Group, Modal, Table, Text, TextInput, Title } from "@mantine/core";
+import { ActionIcon, Badge, Button, Card, Group, Modal, Select, Table, Text, TextInput, Title } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDeleteWorker, useWorkers } from "../api/hooks";
+import { useCreateWorker, useDeleteWorker, useTeams, useWorkers } from "../api/hooks";
 
 const statusColors: Record<string, string> = {
   Active: "green",
@@ -14,9 +15,31 @@ export default function Directory() {
   const [params] = useSearchParams();
   const q = params.get("q") || undefined;
   const { data: workers, isLoading } = useWorkers({ q });
+  const { data: teams } = useTeams();
   const navigate = useNavigate();
   const deleteWorker = useDeleteWorker();
+  const createWorker = useCreateWorker();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const createForm = useForm({
+    initialValues: {
+      first_name: "", last_name: "", email: "", phone: "",
+      type: "Employee", status: "Active", office_location: "",
+      team_id: null as number | null,
+    },
+  });
+
+  const handleCreate = async (values: typeof createForm.values) => {
+    try {
+      await createWorker.mutateAsync(values as any);
+      notifications.show({ title: "Created", message: "Employee added", color: "green" });
+      createForm.reset();
+      setCreateOpen(false);
+    } catch {
+      notifications.show({ title: "Error", message: "Failed to create employee", color: "red" });
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -31,11 +54,14 @@ export default function Directory() {
 
   return (
     <div>
-      <Title order={2} mb="md">Employee Directory</Title>
+      <Group justify="space-between" mb="md">
+        <Title order={2}>Employee Directory</Title>
+        <Button onClick={() => setCreateOpen(true)}>Add Employee</Button>
+      </Group>
       <Card withBorder mb="md">
         <Group>
           <TextInput
-            placeholder="Search by name, email, or title..."
+            placeholder="Search by name or email..."
             defaultValue={q || ""}
             onChange={(e) => {
               const val = e.currentTarget.value;
@@ -49,7 +75,6 @@ export default function Directory() {
         <Table.Thead>
           <Table.Tr>
             <Table.Th>Name</Table.Th>
-            <Table.Th>Job Title</Table.Th>
             <Table.Th>Email</Table.Th>
             <Table.Th>Type</Table.Th>
             <Table.Th>Status</Table.Th>
@@ -59,7 +84,7 @@ export default function Directory() {
         <Table.Tbody>
           {isLoading && (
             <Table.Tr>
-              <Table.Td colSpan={6}>
+              <Table.Td colSpan={5}>
                 <Text c="dimmed">Loading...</Text>
               </Table.Td>
             </Table.Tr>
@@ -73,7 +98,6 @@ export default function Directory() {
               <Table.Td>
                 <Text fw={500}>{w.first_name} {w.last_name}</Text>
               </Table.Td>
-              <Table.Td>{w.job_title || "—"}</Table.Td>
               <Table.Td>{w.email || "—"}</Table.Td>
               <Table.Td>{w.type}</Table.Td>
               <Table.Td>
@@ -95,7 +119,7 @@ export default function Directory() {
           ))}
           {workers?.length === 0 && (
             <Table.Tr>
-              <Table.Td colSpan={6}>
+              <Table.Td colSpan={5}>
                 <Text c="dimmed" ta="center">No workers found</Text>
               </Table.Td>
             </Table.Tr>
@@ -109,6 +133,31 @@ export default function Directory() {
           <Button variant="light" onClick={() => setDeleteTarget(null)}>Cancel</Button>
           <Button color="red" loading={deleteWorker.isPending} onClick={handleDelete}>Delete</Button>
         </Group>
+      </Modal>
+
+      <Modal opened={createOpen} onClose={() => setCreateOpen(false)} title="Add Employee">
+        <form onSubmit={createForm.onSubmit(handleCreate)}>
+          <TextInput label="First Name" required {...createForm.getInputProps("first_name")} mb="sm" />
+          <TextInput label="Last Name" required {...createForm.getInputProps("last_name")} mb="sm" />
+          <TextInput label="Email" {...createForm.getInputProps("email")} mb="sm" />
+          <TextInput label="Phone" {...createForm.getInputProps("phone")} mb="sm" />
+          <Select label="Type" data={["Employee", "Contractor"]} {...createForm.getInputProps("type")} mb="sm" />
+          <Select
+            label="Team"
+            clearable
+            searchable
+            data={(teams || []).filter((t) => t.name !== "Root").map((t) => ({ value: String(t.id), label: t.name }))}
+            value={createForm.values.team_id !== null ? String(createForm.values.team_id) : null}
+            onChange={(v) => createForm.setFieldValue("team_id", v ? Number(v) : null)}
+            mb="sm"
+          />
+          <Select label="Status" data={["Active", "On Leave"]} {...createForm.getInputProps("status")} mb="sm" />
+          <TextInput label="Office Location" {...createForm.getInputProps("office_location")} mb="lg" />
+          <Group justify="flex-end">
+            <Button variant="light" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button type="submit" loading={createWorker.isPending}>Create</Button>
+          </Group>
+        </form>
       </Modal>
     </div>
   );

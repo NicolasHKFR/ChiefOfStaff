@@ -7,7 +7,6 @@ from app.routers import (
     documents,
     export,
     org_chart,
-    positions,
     presence,
     reports,
     search,
@@ -25,7 +24,6 @@ app.include_router(workers.router)
 app.include_router(org_chart.router)
 app.include_router(presence.router)
 app.include_router(teams.router)
-app.include_router(positions.router)
 app.include_router(skills.router)
 app.include_router(documents.router)
 app.include_router(reports.router)

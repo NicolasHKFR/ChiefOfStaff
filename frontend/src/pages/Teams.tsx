@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ActionIcon, Box, Button, Card, Group, Modal, Select, Table, Text, TextInput, Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { useTeams, useCreateTeam, useUpdateTeam, useWorkers } from "../api/hooks";
+import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useWorkers } from "../api/hooks";
 import type { Team } from "../types";
 
 interface TreeNode extends Team {
@@ -29,12 +30,15 @@ function buildTree(teams: Team[]): TreeNode[] {
   return roots;
 }
 
-function TeamRow({ node, depth, workerMap, onEdit }: {
+function TeamRow({ node, depth, workerMap, teamWorkers, onEdit, onDelete }: {
   node: TreeNode;
   depth: number;
   workerMap: Record<number, string>;
+  teamWorkers: Record<number, { id: number; first_name: string; last_name: string }[]>;
   onEdit: (t: Team) => void;
+  onDelete: (t: Team) => void;
 }) {
+  const members = teamWorkers[node.id] || [];
   return (
     <>
       <Table.Tr>
@@ -45,13 +49,23 @@ function TeamRow({ node, depth, workerMap, onEdit }: {
         </Table.Td>
         <Table.Td>{workerMap[node.manager_id ?? -1] || "—"}</Table.Td>
         <Table.Td>
-          <ActionIcon variant="subtle" onClick={() => onEdit(node)}>
-            <Text fw={700}>✎</Text>
-          </ActionIcon>
+          {members.length > 0
+            ? members.map((m) => `${m.first_name} ${m.last_name}`).join(", ")
+            : "—"}
+        </Table.Td>
+        <Table.Td>
+          <Group gap={4}>
+            <ActionIcon variant="subtle" onClick={() => onEdit(node)}>
+              <Text fw={700}>✎</Text>
+            </ActionIcon>
+            <ActionIcon color="red" variant="subtle" onClick={() => onDelete(node)}>
+              <Text component="span" fw={700}>×</Text>
+            </ActionIcon>
+          </Group>
         </Table.Td>
       </Table.Tr>
       {node.children.map((child) => (
-        <TeamRow key={child.id} node={child} depth={depth + 1} workerMap={workerMap} onEdit={onEdit} />
+        <TeamRow key={child.id} node={child} depth={depth + 1} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={onEdit} onDelete={onDelete} />
       ))}
     </>
   );
@@ -62,16 +76,41 @@ export default function Teams() {
   const { data: workers } = useWorkers();
   const createTeam = useCreateTeam();
   const updateTeam = useUpdateTeam();
+  const deleteTeam = useDeleteTeam();
   const [opened, { open, close }] = useDisclosure(false);
   const [editTarget, setEditTarget] = useState<Team | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Team | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const form = useForm({
+    initialValues: { name: "", manager_id: null as number | null, parent_team_id: null as number | null },
+  });
+
+  useEffect(() => {
+    const idParam = searchParams.get("id");
+    if (idParam && teams) {
+      const team = teams.find((t) => t.id === Number(idParam));
+      if (team) {
+        form.setValues({ name: team.name, manager_id: team.manager_id ?? null, parent_team_id: team.parent_team_id ?? null });
+        setEditTarget(team);
+        open();
+        setSearchParams({});
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, teams]);
 
   const workerMap = Object.fromEntries(
     (workers || []).map((w) => [w.id, `${w.first_name} ${w.last_name}`])
   );
 
-  const form = useForm({
-    initialValues: { name: "", manager_id: null as number | null, parent_team_id: null as number | null },
-  });
+  const teamWorkers: Record<number, { id: number; first_name: string; last_name: string }[]> = {};
+  for (const w of workers || []) {
+    if (w.team_id) {
+      if (!teamWorkers[w.team_id]) teamWorkers[w.team_id] = [];
+      teamWorkers[w.team_id].push({ id: w.id, first_name: w.first_name, last_name: w.last_name });
+    }
+  }
 
   const openCreate = () => {
     form.reset();
@@ -101,7 +140,19 @@ export default function Teams() {
     }
   };
 
-  const tree = teams ? buildTree(teams) : [];
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteTeam.mutateAsync(deleteTarget.id);
+      notifications.show({ title: "Deleted", message: "Team removed", color: "orange" });
+    } catch {
+      notifications.show({ title: "Error", message: "Failed to delete team", color: "red" });
+    }
+    setDeleteTarget(null);
+  };
+
+  const teamsWithoutRoot = (teams || []).filter((t) => t.name !== "Root");
+  const tree = buildTree(teamsWithoutRoot);
 
   return (
     <div>
@@ -115,16 +166,17 @@ export default function Teams() {
           <Table.Tr>
             <Table.Th>Name</Table.Th>
             <Table.Th>Manager</Table.Th>
+            <Table.Th>Members</Table.Th>
             <Table.Th>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {tree.map((node) => (
-            <TeamRow key={node.id} node={node} depth={0} workerMap={workerMap} onEdit={openEdit} />
+            <TeamRow key={node.id} node={node} depth={0} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={openEdit} onDelete={setDeleteTarget} />
           ))}
           {!isLoading && tree.length === 0 && (
             <Table.Tr>
-              <Table.Td colSpan={3}>
+              <Table.Td colSpan={4}>
                 <Text c="dimmed" ta="center">No teams yet</Text>
               </Table.Td>
             </Table.Tr>
@@ -147,13 +199,28 @@ export default function Teams() {
           <Select
             label="Parent Team"
             clearable
-            data={(teams || []).filter((t) => t.id !== editTarget?.id).map((t) => ({ value: String(t.id), label: t.name }))}
+            data={(teamsWithoutRoot).filter((t) => t.id !== editTarget?.id).map((t) => ({ value: String(t.id), label: t.name }))}
             value={form.values.parent_team_id !== null ? String(form.values.parent_team_id) : null}
             onChange={(v) => form.setFieldValue("parent_team_id", v ? Number(v) : null)}
             mb="sm"
           />
           <Button type="submit">{editTarget ? "Save" : "Create"}</Button>
         </form>
+      </Modal>
+
+      <Modal opened={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Confirm Deletion" centered>
+        <Text mb="lg">
+          Remove team "{deleteTarget?.name}"?
+          {deleteTarget && (teamWorkers[deleteTarget.id]?.length ?? 0) > 0 && (
+            <Text size="sm" c="red" mt="xs">
+              {teamWorkers[deleteTarget.id].length} member(s) will be unassigned.
+            </Text>
+          )}
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="light" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button color="red" loading={deleteTeam.isPending} onClick={handleDelete}>Delete</Button>
+        </Group>
       </Modal>
     </div>
   );

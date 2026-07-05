@@ -1,46 +1,65 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
+from app.models.team import Team
+from app.models.worker import Worker
 
 router = APIRouter(prefix="/org-chart", tags=["Org Chart"])
 
 
-@router.get("")
-async def get_org_chart(db: AsyncSession = Depends(get_db)):
-    query = text("""
-        WITH RECURSIVE org_tree AS (
-            SELECT id, first_name, last_name, job_title, photo_url, manager_id, 0 AS depth
-            FROM worker WHERE manager_id IS NULL AND status != 'Terminated'
-            UNION ALL
-            SELECT w.id, w.first_name, w.last_name, w.job_title, w.photo_url, w.manager_id, ot.depth + 1
-            FROM worker w
-            JOIN org_tree ot ON w.manager_id = ot.id
-            WHERE w.status != 'Terminated'
-        )
-        SELECT * FROM org_tree ORDER BY depth
-    """)
-    result = await db.execute(query)
-    rows = result.mappings().all()
+async def _build_team_tree(db: AsyncSession):
+    result = await db.execute(
+        select(Team).order_by(Team.id)
+    )
+    teams = result.scalars().all()
 
-    nodes = {}
-    roots = []
-    for row in rows:
-        node = {
-            "id": row["id"],
-            "first_name": row["first_name"],
-            "last_name": row["last_name"],
-            "job_title": row["job_title"],
-            "photo_url": row["photo_url"],
+    team_map = {}
+    for t in teams:
+        team_map[t.id] = {
+            "id": t.id,
+            "name": t.name,
+            "manager": None,
+            "members": [],
             "children": [],
         }
-        nodes[row["id"]] = node
-        if row["manager_id"] is None:
-            roots.append(node)
-        else:
-            parent = nodes.get(row["manager_id"])
-            if parent:
-                parent["children"].append(node)
 
-    return roots[0] if len(roots) == 1 else roots
+    workers_result = await db.execute(
+        select(Worker).where(Worker.status != "Terminated").order_by(Worker.last_name)
+    )
+    workers = workers_result.scalars().all()
+    worker_by_id = {w.id: w for w in workers}
+
+    for w in workers:
+        if w.team_id and w.team_id in team_map:
+            team_map[w.team_id]["members"].append({
+                "id": w.id,
+                "first_name": w.first_name,
+                "last_name": w.last_name,
+                "photo_url": w.photo_url,
+            })
+
+    roots = []
+    for t in teams:
+        node = team_map[t.id]
+        if t.manager_id and t.manager_id in worker_by_id:
+            mgr = worker_by_id[t.manager_id]
+            node["manager"] = {
+                "id": mgr.id,
+                "first_name": mgr.first_name,
+                "last_name": mgr.last_name,
+                "photo_url": mgr.photo_url,
+            }
+        if t.parent_team_id and t.parent_team_id in team_map:
+            team_map[t.parent_team_id]["children"].append(node)
+        else:
+            roots.append(node)
+
+    return roots
+
+
+@router.get("")
+async def get_org_chart(db: AsyncSession = Depends(get_db)):
+    return await _build_team_tree(db)

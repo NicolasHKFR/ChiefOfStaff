@@ -8,14 +8,14 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconCalendarTime, IconChartBar, IconFileDescription, IconHierarchy2, IconPaperclip, IconServer2, IconSun, IconTools, IconUsers, IconUsersGroup } from "@tabler/icons-react";
+import { IconCalendarTime, IconChartBar, IconFileDescription, IconHierarchy2, IconPaperclip, IconSitemap, IconSun, IconTools, IconUsers, IconUsersGroup } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 const navItems = [
   { label: "Directory", icon: IconUsers, path: "/" },
   { label: "Org Chart", icon: IconHierarchy2, path: "/org-chart" },
   { label: "Teams", icon: IconUsersGroup, path: "/teams" },
-  { label: "Positions", icon: IconServer2, path: "/positions" },
+  { label: "Team Chart", icon: IconSitemap, path: "/team-chart" },
   { label: "Presence", icon: IconCalendarTime, path: "/presence" },
   { label: "Skills", icon: IconTools, path: "/skills" },
   { label: "Documents", icon: IconPaperclip, path: "/documents" },

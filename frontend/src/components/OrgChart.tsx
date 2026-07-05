@@ -1,21 +1,27 @@
 import { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import type { OrgChartNode } from "../types";
+import type { OrgChartTeamNode } from "../types";
 
 interface Props {
-  data: OrgChartNode;
-  onNodeClick?: (id: number) => void;
+  data: OrgChartTeamNode[];
+  onWorkerClick?: (id: number) => void;
 }
 
-export default function OrgChart({ data, onNodeClick }: Props) {
+const COLORS = ["#228be6", "#40c057", "#fab005", "#fd7e14", "#7950f2", "#e64980", "#15aabf"];
+
+function nodeColor(index: number) {
+  return COLORS[index % COLORS.length];
+}
+
+export default function OrgChart({ data, onWorkerClick }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (!svgRef.current || !data) return;
+    if (!svgRef.current || !data || data.length === 0) return;
 
-    const width = 1200;
-    const height = 800;
-    const margin = { top: 60, right: 60, bottom: 60, left: 60 };
+    const width = 1400;
+    const height = 900;
+    const margin = { top: 80, right: 120, bottom: 80, left: 120 };
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -31,11 +37,14 @@ export default function OrgChart({ data, onNodeClick }: Props) {
 
     svg.call(zoom);
 
-    const root = d3.hierarchy(data);
-    const treeLayout = d3.tree<OrgChartNode>().size([width - margin.left - margin.right, height - margin.top - margin.bottom]);
+    const root = d3.hierarchy<OrgChartTeamNode>({ id: 0, name: "root", manager: null, members: [], children: data } as OrgChartTeamNode);
+    const treeLayout = d3.tree<OrgChartTeamNode>().size([
+      width - margin.left - margin.right,
+      height - margin.top - margin.bottom,
+    ]);
     treeLayout(root);
 
-    const link = g.append("g")
+    g.append("g")
       .selectAll("line")
       .data(root.links())
       .join("line")
@@ -48,31 +57,53 @@ export default function OrgChart({ data, onNodeClick }: Props) {
 
     const node = g.append("g")
       .selectAll("g")
-      .data(root.descendants())
+      .data(root.descendants().filter((d) => d.data.id !== 0))
       .join("g")
-      .attr("transform", (d) => `translate(${d.x},${d.y})`)
-      .style("cursor", "pointer")
-      .on("click", (_event, d) => onNodeClick?.(d.data.id));
+      .attr("transform", (d) => `translate(${d.x},${d.y})`);
 
-    node.append("circle")
-      .attr("r", 20)
-      .attr("fill", "#228be6")
-      .attr("stroke", "#fff")
+    node.append("rect")
+      .attr("x", -70)
+      .attr("y", -20)
+      .attr("width", 140)
+      .attr("height", (d) => 40 + Math.max(0, d.data.members.length) * 22 + 10)
+      .attr("rx", 8)
+      .attr("fill", (_d, i) => nodeColor(i))
+      .attr("opacity", 0.15)
+      .attr("stroke", (_d, i) => nodeColor(i))
       .attr("stroke-width", 2);
 
     node.append("text")
-      .attr("dy", 35)
       .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .text((d) => `${d.data.first_name} ${d.data.last_name}`);
+      .attr("dy", 5)
+      .attr("font-size", "13px")
+      .attr("font-weight", "bold")
+      .text((d) => d.data.name);
 
-    node.append("text")
-      .attr("dy", 50)
+    const managerLabel = node.append("text")
       .attr("text-anchor", "middle")
+      .attr("dy", 22)
       .attr("font-size", "10px")
-      .attr("fill", "#888")
-      .text((d) => d.data.job_title || "");
-  }, [data, onNodeClick]);
+      .attr("fill", "#666");
+
+    managerLabel.text((d) => d.data.manager ? `Mgr: ${d.data.manager.first_name} ${d.data.manager.last_name}` : "No manager");
+
+    node.each(function (d) {
+      const el = d3.select(this);
+      d.data.members.forEach((m, i) => {
+        el.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", 38 + i * 22)
+          .attr("font-size", "10px")
+          .attr("fill", "#333")
+          .style("cursor", "pointer")
+          .text(`${m.first_name} ${m.last_name}`)
+          .on("click", (event) => {
+            event.stopPropagation();
+            onWorkerClick?.(m.id);
+          });
+      });
+    });
+  }, [data, onWorkerClick]);
 
   return (
     <div style={{ overflow: "auto", border: "1px solid #eee", borderRadius: 8 }}>

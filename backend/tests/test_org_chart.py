@@ -2,51 +2,58 @@
 import pytest
 
 
+def _find_team(nodes, name):
+    for node in nodes:
+        if node["name"] == name:
+            return node
+        found = _find_team(node.get("children", []), name)
+        if found:
+            return found
+    return None
+
+
+def _find_worker_in_team(node, name):
+    for m in node.get("members", []):
+        if m["first_name"] == name:
+            return True
+    return any(
+        _find_worker_in_team(c, name)
+        for c in node.get("children", [])
+    )
+
+
 @pytest.mark.asyncio
-async def test_org_chart_single_root(client, seed_db):
+async def test_org_chart_returns_teams(client, seed_db):
     resp = await client.get("/org-chart")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["first_name"] == "Alice"
-    assert len(data["children"]) > 0
+    assert isinstance(data, list)
+    assert len(data) > 0
 
 
 @pytest.mark.asyncio
-async def test_org_chart_hierarchy(client, seed_db):
+async def test_org_chart_team_has_members(client, seed_db):
     resp = await client.get("/org-chart")
     data = resp.json()
-    bob = next(c for c in data["children"] if c["first_name"] == "Bob")
-    assert len(bob["children"]) >= 2
+    frontend = _find_team(data, "Frontend")
+    assert frontend is not None
+    assert len(frontend["members"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_org_chart_team_has_manager(client, seed_db):
+    resp = await client.get("/org-chart")
+    data = resp.json()
+    frontend = _find_team(data, "Frontend")
+    assert frontend is not None
+    assert frontend["manager"] is not None
 
 
 @pytest.mark.asyncio
 async def test_org_chart_excludes_terminated(client, seed_db):
     resp = await client.get("/org-chart")
     data = resp.json()
-
-    def find_name(node, name):
-        if node["first_name"] == name:
-            return True
-        return any(find_name(c, name) for c in node["children"])
-
-    assert not find_name(data, "Eve")
-
-
-@pytest.mark.asyncio
-async def test_org_chart_no_terminated_in_subtree(client, seed_db):
-    """Verify terminated workers aren't in the tree at any depth."""
-    resp = await client.get("/org-chart")
-    data = resp.json()
-
-    all_names = []
-
-    def collect(node):
-        all_names.append(node["first_name"])
-        for c in node.get("children", []):
-            collect(c)
-
-    collect(data)
-    assert "Eve" not in all_names
+    assert not _find_worker_in_team({"children": data, "members": []}, "Eve")
 
 
 @pytest.mark.asyncio
@@ -55,3 +62,10 @@ async def test_org_chart_empty_db(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data == []
+
+
+@pytest.mark.asyncio
+async def test_org_chart_worker_in_team(client, seed_db):
+    resp = await client.get("/org-chart")
+    data = resp.json()
+    assert _find_worker_in_team({"children": data, "members": []}, "Charlie")

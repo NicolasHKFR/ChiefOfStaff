@@ -7,7 +7,7 @@ async def test_list_teams(client, seed_db):
     resp = await client.get("/teams")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 2
+    assert len(data) == 3
 
 
 @pytest.mark.asyncio
@@ -73,3 +73,36 @@ async def test_team_update_manager(client, seed_db):
     resp = await client.patch(f"/teams/{backend_t.id}", json={"manager_id": mgr.id})
     assert resp.status_code == 200
     assert resp.json()["manager_id"] == mgr.id
+
+
+@pytest.mark.asyncio
+async def test_cannot_update_root_team(client, seed_db):
+    root = seed_db["root"]
+    resp = await client.patch(f"/teams/{root.id}", json={"name": "Renamed"})
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_cannot_delete_root_team(client, seed_db):
+    root = seed_db["root"]
+    resp = await client.delete(f"/teams/{root.id}")
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_can_delete_non_root_team(client, seed_db):
+    backend_t = seed_db["backend_t"]
+    resp = await client.delete(f"/teams/{backend_t.id}")
+    assert resp.status_code == 204
+    get_resp = await client.get(f"/teams/{backend_t.id}")
+    assert get_resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_team_nullifies_worker_team(client, seed_db):
+    frontend = seed_db["frontend"]
+    ic = seed_db["ic"]
+    resp = await client.delete(f"/teams/{frontend.id}")
+    assert resp.status_code == 204
+    get_resp = await client.get(f"/workers/{ic.id}")
+    assert get_resp.json()["team_id"] is None

@@ -9,12 +9,12 @@ export default function OrgChartPage() {
 
   if (isLoading) return <LoadingOverlay visible />;
   if (error) return <Alert color="red">Failed to load org chart</Alert>;
-  if (!data) return <Alert color="yellow">No data — seed the database first</Alert>;
+  if (!data || data.length === 0) return <Alert color="yellow">No data — seed the database first</Alert>;
 
   return (
     <div>
       <Title order={2} mb="md">Organization Chart</Title>
-      <OrgChart data={data} onNodeClick={(id) => navigate(`/workers/${id}`)} />
+      <OrgChart data={data} onWorkerClick={(id) => navigate(`/workers/${id}`)} />
     </div>
   );
 }

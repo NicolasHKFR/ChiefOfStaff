@@ -29,7 +29,7 @@ export default function WorkerProfile() {
   const form = useForm({
     initialValues: {
       first_name: "", last_name: "", email: "", phone: "",
-      job_title: "", type: "Employee", employment_type: "",
+      type: "Employee",
       status: "Active", office_location: "",
     },
   });
@@ -75,11 +75,9 @@ export default function WorkerProfile() {
         </Card>
 
         <Card withBorder mb="md">
-          <Title order={4} mb="sm">Employment</Title>
+          <Title order={4} mb="sm">Details</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput label="Job Title" {...form.getInputProps("job_title")} />
             <Select label="Type" data={["Employee", "Contractor"]} {...form.getInputProps("type")} />
-            <TextInput label="Employment Type" {...form.getInputProps("employment_type")} />
             <Select label="Status" data={["Active", "On Leave", "Terminated"]} {...form.getInputProps("status")} />
             <TextInput label="Office Location" {...form.getInputProps("office_location")} />
           </SimpleGrid>

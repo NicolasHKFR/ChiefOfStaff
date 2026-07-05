@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.document import Document
-from app.models.position import Position
+from app.models.team import Team
 from app.models.worker import Worker, WorkerSkill
 from app.schemas.common import WorkerCreate, WorkerOut, WorkerUpdate
 
@@ -30,7 +30,6 @@ async def list_workers(
             Worker.first_name.ilike(pattern)
             | Worker.last_name.ilike(pattern)
             | Worker.email.ilike(pattern)
-            | Worker.job_title.ilike(pattern)
         )
     stmt = stmt.order_by(Worker.last_name, Worker.first_name)
     result = await db.execute(stmt)
@@ -80,8 +79,7 @@ async def delete_worker(worker_id: int, db: AsyncSession = Depends(get_db)):
 
     await db.execute(WorkerSkill.__table__.delete().where(WorkerSkill.worker_id == worker_id))
     await db.execute(Document.__table__.delete().where(Document.worker_id == worker_id))
-    await db.execute(Worker.__table__.update().where(Worker.manager_id == worker_id).values(manager_id=None))
-    await db.execute(Position.__table__.update().where(Position.linked_worker_id == worker_id).values(linked_worker_id=None))
+    await db.execute(Team.__table__.update().where(Team.manager_id == worker_id).values(manager_id=None))
 
     await db.delete(worker)
     await db.commit()

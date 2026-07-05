@@ -17,16 +17,10 @@ async def test_seed_worker_counts(client, seed_db):
 @pytest.mark.asyncio
 async def test_seed_team_count(client, seed_db):
     resp = await client.get("/teams")
-    assert len(resp.json()) == 2
+    assert len(resp.json()) == 3
 
 
 @pytest.mark.asyncio
 async def test_seed_skill_count(client, seed_db):
     resp = await client.get("/skills")
     assert len(resp.json()) == 3
-
-
-@pytest.mark.asyncio
-async def test_seed_position_count(client, seed_db):
-    resp = await client.get("/positions")
-    assert len(resp.json()) == 2

@@ -12,7 +12,6 @@ class OrgChartNode(BaseModel):
     id: int
     first_name: str
     last_name: str
-    job_title: Optional[str] = None
     photo_url: Optional[str] = None
     children: list["OrgChartNode"] = []
 
@@ -27,10 +26,7 @@ class WorkerOut(BaseModel):
     photo_url: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    job_title: Optional[str] = None
     team_id: Optional[int] = None
-    manager_id: Optional[int] = None
-    employment_type: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: str = "Active"
@@ -46,10 +42,7 @@ class WorkerCreate(BaseModel):
     photo_url: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    job_title: Optional[str] = None
     team_id: Optional[int] = None
-    manager_id: Optional[int] = None
-    employment_type: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: str = "Active"
@@ -65,10 +58,7 @@ class WorkerUpdate(BaseModel):
     photo_url: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
-    job_title: Optional[str] = None
     team_id: Optional[int] = None
-    manager_id: Optional[int] = None
-    employment_type: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[str] = None
@@ -91,39 +81,10 @@ class TeamCreate(BaseModel):
     parent_team_id: Optional[int] = None
 
 
-class PositionOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    job_title: str
-    team_id: Optional[int] = None
-    employment_type: Optional[str] = None
-    status: str
-    target_start_date: Optional[date] = None
-    linked_worker_id: Optional[int] = None
-
-
-class PositionCreate(BaseModel):
-    job_title: str
-    team_id: Optional[int] = None
-    employment_type: Optional[str] = None
-    status: str = "Vacant"
-    target_start_date: Optional[date] = None
-    linked_worker_id: Optional[int] = None
-
-
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
     manager_id: Optional[int] = None
     parent_team_id: Optional[int] = None
-
-
-class PositionUpdate(BaseModel):
-    job_title: Optional[str] = None
-    team_id: Optional[int] = None
-    employment_type: Optional[str] = None
-    status: Optional[str] = None
-    target_start_date: Optional[date] = None
-    linked_worker_id: Optional[int] = None
 
 
 class SkillOut(BaseModel):

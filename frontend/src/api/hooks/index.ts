@@ -2,8 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import type {
   Document,
-  OrgChartNode,
-  Position,
+  OrgChartTeamNode,
   Skill,
   Team,
   Worker,
@@ -61,7 +60,7 @@ export function useDeleteWorker() {
 export function useOrgChart() {
   return useQuery({
     queryKey: ["orgChart"],
-    queryFn: () => client.get("/org-chart").then((r) => r.data as OrgChartNode),
+    queryFn: () => client.get("/org-chart").then((r) => r.data as OrgChartTeamNode[]),
   });
 }
 
@@ -90,28 +89,14 @@ export function useUpdateTeam() {
   });
 }
 
-/* Positions */
-export function usePositions() {
-  return useQuery({
-    queryKey: ["positions"],
-    queryFn: () => client.get("/positions").then((r) => r.data as Position[]),
-  });
-}
-
-export function useCreatePosition() {
+export function useDeleteTeam() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<Position>) => client.post("/positions", data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["positions"] }),
-  });
-}
-
-export function useUpdatePosition() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Position> }) =>
-      client.patch(`/positions/${id}`, data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["positions"] }),
+    mutationFn: (id: number) => client.delete(`/teams/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["teams"] });
+      qc.invalidateQueries({ queryKey: ["orgChart"] });
+    },
   });
 }
 

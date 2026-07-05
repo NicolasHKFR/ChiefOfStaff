@@ -35,20 +35,24 @@ async def test_terminate_worker_removes_from_org_chart(client, seed_db):
     resp = await client.get("/org-chart")
     data = resp.json()
 
-    def find_name(node, name):
-        if node["first_name"] == name:
-            return True
-        return any(find_name(c, name) for c in node.get("children", []))
+    def find_worker(nodes, name):
+        for node in nodes:
+            for m in node.get("members", []):
+                if m["first_name"] == name:
+                    return True
+            if find_worker(node.get("children", []), name):
+                return True
+        return False
 
-    assert not find_name(data, "Charlie")
+    assert not find_worker(data if isinstance(data, list) else [data], "Charlie")
 
 
 @pytest.mark.asyncio
 async def test_export_reflects_updated_worker(client, seed_db):
     ic = seed_db["ic"]
-    await client.patch(f"/workers/{ic.id}", json={"job_title": "Senior Engineer"})
+    await client.patch(f"/workers/{ic.id}", json={"first_name": "Charles"})
     resp = await client.get("/export/workers?format=csv")
-    assert "Senior Engineer" in resp.text
+    assert "Charles" in resp.text
 
 
 @pytest.mark.asyncio
@@ -66,3 +70,15 @@ async def test_search_across_types(client, seed_db):
     resp = await client.get("/search?q=bob")
     data = resp.json()
     assert len(data["workers"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_org_chart_returns_teams(client, seed_db):
+    resp = await client.get("/org-chart")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["name"] == "Root"
+    child_names = [c["name"] for c in data[0].get("children", [])]
+    assert "Frontend" in child_names

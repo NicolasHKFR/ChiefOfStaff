@@ -3,7 +3,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.position import Position
 from app.models.team import Team
 from app.models.worker import Worker
 
@@ -21,7 +20,6 @@ async def global_search(q: str = Query(min_length=1), db: AsyncSession = Depends
             Worker.first_name.ilike(pattern)
             | Worker.last_name.ilike(pattern)
             | Worker.email.ilike(pattern)
-            | Worker.job_title.ilike(pattern)
         )
         .limit(20)
     )
@@ -36,14 +34,6 @@ async def global_search(q: str = Query(min_length=1), db: AsyncSession = Depends
     results["teams"] = [
         {"id": t.id, "label": t.name, "type": "Team"}
         for t in teams.scalars().all()
-    ]
-
-    positions = await db.execute(
-        select(Position).where(Position.job_title.ilike(pattern)).limit(10)
-    )
-    results["positions"] = [
-        {"id": p.id, "label": p.job_title, "type": "Position"}
-        for p in positions.scalars().all()
     ]
 
     return results

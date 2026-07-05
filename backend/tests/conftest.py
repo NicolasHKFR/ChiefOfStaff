@@ -18,7 +18,6 @@ from app.models.audit_log import AuditLog
 from app.utils.audit import setup_audit
 from app.models.document import Document
 from app.models.organization import Organization
-from app.models.position import Position
 from app.models.skill import Skill
 from app.models.team import Team
 from app.models.worker import Worker, WorkerSkill
@@ -80,40 +79,44 @@ async def seed_db(db: AsyncSession):
     await db.flush()
 
     ceo = Worker(type="Employee", first_name="Alice", last_name="CEO",
-                 email="ceo@test.com", job_title="CEO",
+                 email="ceo@test.com",
                  start_date=date(2020, 1, 1), status="Active")
     db.add(ceo)
     await db.flush()
 
     mgr = Worker(type="Employee", first_name="Bob", last_name="Manager",
-                 email="bob@test.com", job_title="Engineering Manager",
-                 manager_id=ceo.id, start_date=date(2021, 1, 1),
+                 email="bob@test.com",
+                 start_date=date(2021, 1, 1),
                  status="Active")
     db.add(mgr)
     await db.flush()
 
-    frontend = Team(name="Frontend", manager_id=mgr.id)
-    backend_t = Team(name="Backend")
+    root = Team(name="Root", manager_id=ceo.id)
+    db.add(root)
+    await db.flush()
+
+    frontend = Team(name="Frontend", manager_id=mgr.id, parent_team_id=root.id)
+    backend_t = Team(name="Backend", parent_team_id=root.id)
     db.add_all([frontend, backend_t])
     await db.flush()
 
     ic = Worker(type="Employee", first_name="Charlie", last_name="IC",
-                email="charlie@test.com", job_title="Engineer",
-                team_id=frontend.id, manager_id=mgr.id, start_date=date(2022, 6, 15),
+                email="charlie@test.com",
+                team_id=frontend.id, start_date=date(2022, 6, 15),
                 status="Active")
     db.add(ic)
     await db.flush()
 
     contractor = Worker(type="Contractor", first_name="Diana", last_name="Contractor",
-                        email="diana@test.com", job_title="DevOps",
-                        team_id=backend_t.id, manager_id=mgr.id,
+                        email="diana@test.com",
+                        team_id=backend_t.id,
                         start_date=date(2023, 1, 1), end_date=date(2024, 12, 31),
                         status="Active")
     db.add(contractor)
     await db.flush()
 
     terminated = Worker(type="Employee", first_name="Eve", last_name="Gone",
-                        email="eve@test.com", job_title="Former",
+                        email="eve@test.com",
                         start_date=date(2019, 1, 1), end_date=date(2023, 6, 1),
                         status="Terminated")
     db.add(terminated)
@@ -127,21 +130,14 @@ async def seed_db(db: AsyncSession):
 
     db.add(WorkerSkill(worker_id=ic.id, skill_id=python.id, proficiency_level="Advanced"))
     db.add(WorkerSkill(worker_id=ic.id, skill_id=react.id, proficiency_level="Intermediate"))
-    await db.flush()
-
-    pos1 = Position(job_title="Senior Engineer", team_id=frontend.id,
-                    status="Vacant", employment_type="Full-time")
-    pos2 = Position(job_title="Intern", status="Planned")
-    db.add_all([pos1, pos2])
     await db.commit()
 
     return {
         "org": org,
         "ceo": ceo, "mgr": mgr, "ic": ic,
         "contractor": contractor, "terminated": terminated,
-        "frontend": frontend, "backend_t": backend_t,
+        "root": root, "frontend": frontend, "backend_t": backend_t,
         "python": python, "react": react, "docker": docker,
-        "pos1": pos1, "pos2": pos2,
     }
 
 

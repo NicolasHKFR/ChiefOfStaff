@@ -14,18 +14,13 @@ class Worker(Base):
     photo_url = Column(String(500), nullable=True)
     email = Column(String(255), nullable=True, unique=True)
     phone = Column(String(50), nullable=True)
-    job_title = Column(String(255), nullable=True)
     team_id = Column(Integer, ForeignKey("team.id"), nullable=True)
-    manager_id = Column(Integer, ForeignKey("worker.id"), nullable=True)
-    employment_type = Column(String(50), nullable=True)
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
     status = Column(String(20), nullable=False, default="Active")
     office_location = Column(String(255), nullable=True)
     contract_end_date = Column(Date, nullable=True)
     custom_fields = Column(JSON, nullable=True)
-
-    manager = relationship("Worker", remote_side=[id], backref="direct_reports")
 
     def full_name(self):
         return f"{self.first_name} {self.last_name}"

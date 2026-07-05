@@ -4,12 +4,12 @@ import Dashboard from "./pages/Dashboard";
 import Directory from "./pages/Directory";
 import Documents from "./pages/Documents";
 import OrgChartPage from "./pages/OrgChartPage";
-import Positions from "./pages/Positions";
 import Presence from "./pages/Presence";
 import Settings from "./pages/Settings";
 import Skills from "./pages/Skills";
 import Teams from "./pages/Teams";
 import WorkerProfile from "./pages/WorkerProfile";
+import TeamChartPage from "./pages/TeamChart";
 
 export default function App() {
   return (
@@ -19,7 +19,7 @@ export default function App() {
         <Route path="/workers/:id" element={<WorkerProfile />} />
         <Route path="/org-chart" element={<OrgChartPage />} />
         <Route path="/teams" element={<Teams />} />
-        <Route path="/positions" element={<Positions />} />
+        <Route path="/team-chart" element={<TeamChartPage />} />
         <Route path="/presence" element={<Presence />} />
         <Route path="/skills" element={<Skills />} />
         <Route path="/documents" element={<Documents />} />

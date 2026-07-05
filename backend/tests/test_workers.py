@@ -67,7 +67,6 @@ async def test_create_worker(client, seed_db):
         "first_name": "New",
         "last_name": "Hire",
         "email": "new@test.com",
-        "job_title": "Junior Engineer",
         "status": "Active",
     }
     resp = await client.post("/workers", json=payload)
@@ -113,11 +112,11 @@ async def test_create_worker_contractor(client, seed_db):
 @pytest.mark.asyncio
 async def test_update_worker_partial(client, seed_db):
     ic = seed_db["ic"]
-    resp = await client.patch(f"/workers/{ic.id}", json={"job_title": "Senior Engineer"})
+    resp = await client.patch(f"/workers/{ic.id}", json={"first_name": "Charles"})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["job_title"] == "Senior Engineer"
-    assert data["first_name"] == "Charlie"
+    assert data["first_name"] == "Charles"
+    assert data["email"] == "charlie@test.com"
 
 
 @pytest.mark.asyncio
@@ -140,13 +139,13 @@ async def test_update_worker_not_found(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_update_worker_manager(client, seed_db):
+async def test_update_worker_team(client, seed_db):
     ic = seed_db["ic"]
-    ceo = seed_db["ceo"]
-    resp = await client.patch(f"/workers/{ic.id}", json={"manager_id": ceo.id})
+    backend_t = seed_db["backend_t"]
+    resp = await client.patch(f"/workers/{ic.id}", json={"team_id": backend_t.id})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["manager_id"] == ceo.id
+    assert data["team_id"] == backend_t.id
 
 
 @pytest.mark.asyncio
@@ -166,13 +165,13 @@ async def test_delete_worker_not_found(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_delete_worker_clears_manager_refs(client, seed_db):
+async def test_delete_worker_clears_team_manager_refs(client, seed_db):
     mgr = seed_db["mgr"]
-    ic = seed_db["ic"]
+    frontend = seed_db["frontend"]
     resp = await client.delete(f"/workers/{mgr.id}")
     assert resp.status_code == 204
 
-    get_resp = await client.get(f"/workers/{ic.id}")
+    get_resp = await client.get(f"/teams/{frontend.id}")
     assert get_resp.json()["manager_id"] is None
 
 
