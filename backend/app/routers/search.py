@@ -3,7 +3,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.department import Department
 from app.models.position import Position
 from app.models.team import Team
 from app.models.worker import Worker
@@ -29,14 +28,6 @@ async def global_search(q: str = Query(min_length=1), db: AsyncSession = Depends
     results["workers"] = [
         {"id": w.id, "label": f"{w.first_name} {w.last_name}", "type": "Worker"}
         for w in workers.scalars().all()
-    ]
-
-    depts = await db.execute(
-        select(Department).where(Department.name.ilike(pattern)).limit(10)
-    )
-    results["departments"] = [
-        {"id": d.id, "label": d.name, "type": "Department"}
-        for d in depts.scalars().all()
     ]
 
     teams = await db.execute(

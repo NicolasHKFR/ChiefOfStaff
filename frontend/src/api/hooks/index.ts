@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import type {
-  Department,
   Document,
-  LeaveRequest,
-  LeaveType,
   OrgChartNode,
   Position,
   Skill,
@@ -13,7 +10,7 @@ import type {
 } from "../../types";
 
 /* Workers */
-export function useWorkers(params?: { department_id?: number; status?: string; q?: string }) {
+export function useWorkers(params?: { status?: string; q?: string }) {
   return useQuery({
     queryKey: ["workers", params],
     queryFn: () => client.get("/workers", { params }).then((r) => r.data as Worker[]),
@@ -49,6 +46,17 @@ export function useUpdateWorker() {
   });
 }
 
+export function useDeleteWorker() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => client.delete(`/workers/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workers"] });
+      qc.invalidateQueries({ queryKey: ["orgChart"] });
+    },
+  });
+}
+
 /* Org Chart */
 export function useOrgChart() {
   return useQuery({
@@ -57,36 +65,11 @@ export function useOrgChart() {
   });
 }
 
-/* Departments */
-export function useDepartments() {
-  return useQuery({
-    queryKey: ["departments"],
-    queryFn: () => client.get("/departments").then((r) => r.data as Department[]),
-  });
-}
-
-export function useCreateDepartment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<Department>) => client.post("/departments", data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
-  });
-}
-
-export function useUpdateDepartment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Department> }) =>
-      client.patch(`/departments/${id}`, data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
-  });
-}
-
 /* Teams */
-export function useTeams(department_id?: number) {
+export function useTeams() {
   return useQuery({
-    queryKey: ["teams", department_id],
-    queryFn: () => client.get("/teams", { params: { department_id } }).then((r) => r.data as Team[]),
+    queryKey: ["teams"],
+    queryFn: () => client.get("/teams").then((r) => r.data as Team[]),
   });
 }
 
@@ -94,6 +77,15 @@ export function useCreateTeam() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Partial<Team>) => client.post("/teams", data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["teams"] }),
+  });
+}
+
+export function useUpdateTeam() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Team> }) =>
+      client.patch(`/teams/${id}`, data).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["teams"] }),
   });
 }
@@ -175,50 +167,11 @@ export function useDeleteDocument() {
   });
 }
 
-/* Leave */
-export function useLeaveTypes() {
-  return useQuery({
-    queryKey: ["leaveTypes"],
-    queryFn: () => client.get("/leave-requests/types").then((r) => r.data as LeaveType[]),
-  });
-}
-
-export function useLeaveRequests(worker_id?: number) {
-  return useQuery({
-    queryKey: ["leaveRequests", worker_id],
-    queryFn: () => client.get("/leave-requests", { params: { worker_id } }).then((r) => r.data as LeaveRequest[]),
-  });
-}
-
-export function useCreateLeaveRequest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<LeaveRequest>) => client.post("/leave-requests", data).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leaveRequests"] }),
-  });
-}
-
-export function useUpdateLeaveStatus() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status, approver_id }: { id: number; status: string; approver_id: number }) =>
-      client.patch(`/leave-requests/${id}`, null, { params: { status, approver_id } }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leaveRequests"] }),
-  });
-}
-
 /* Reports */
 export function useHeadcountReport() {
   return useQuery({
     queryKey: ["report", "headcount"],
     queryFn: () => client.get("/reports/headcount").then((r) => r.data),
-  });
-}
-
-export function useLeaveStats() {
-  return useQuery({
-    queryKey: ["report", "leave-stats"],
-    queryFn: () => client.get("/reports/leave-stats").then((r) => r.data),
   });
 }
 

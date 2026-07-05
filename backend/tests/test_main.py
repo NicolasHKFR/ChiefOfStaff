@@ -44,21 +44,6 @@ async def test_terminate_worker_removes_from_org_chart(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_leave_approve_then_list(client, seed_db):
-    lr1 = seed_db["lr1"]
-    ceo = seed_db["ceo"]
-    assert lr1.status == "Pending"
-
-    await client.patch(f"/leave-requests/{lr1.id}?status=Approved&approver_id={ceo.id}")
-
-    resp = await client.get("/leave-requests")
-    data = resp.json()
-    approved = [r for r in data if r["id"] == lr1.id]
-    assert len(approved) == 1
-    assert approved[0]["status"] == "Approved"
-
-
-@pytest.mark.asyncio
 async def test_export_reflects_updated_worker(client, seed_db):
     ic = seed_db["ic"]
     await client.patch(f"/workers/{ic.id}", json={"job_title": "Senior Engineer"})
@@ -67,17 +52,13 @@ async def test_export_reflects_updated_worker(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_create_department_then_create_team(client, seed_db):
-    org = seed_db["org"]
-    dept_resp = await client.post("/departments", json={
-        "organization_id": org.id, "name": "New Dept",
-    })
-    dept_id = dept_resp.json()["id"]
-    team_resp = await client.post("/teams", json={
-        "department_id": dept_id, "name": "New Team",
-    })
-    assert team_resp.status_code == 201
-    assert team_resp.json()["department_id"] == dept_id
+async def test_create_team_then_assign_member(client, seed_db):
+    resp = await client.post("/teams", json={"name": "New Team"})
+    team_id = resp.json()["id"]
+    ic = seed_db["ic"]
+    await client.patch(f"/workers/{ic.id}", json={"team_id": team_id})
+    get_resp = await client.get(f"/workers/{ic.id}")
+    assert get_resp.json()["team_id"] == team_id
 
 
 @pytest.mark.asyncio

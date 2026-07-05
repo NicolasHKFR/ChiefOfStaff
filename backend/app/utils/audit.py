@@ -26,7 +26,7 @@ def receive_before_flush(session, flush_context, instances):
             continue
         mapper = inspect(target)
         entity_name = type(target).__name__
-        watched = {"Worker", "Department", "Team", "Position"}
+        watched = {"Worker", "Team", "Position"}
         if entity_name not in watched:
             continue
         for attr in mapper.attrs:

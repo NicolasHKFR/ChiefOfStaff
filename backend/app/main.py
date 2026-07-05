@@ -4,10 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routers import (
     audit,
-    departments,
     documents,
     export,
-    leave,
     org_chart,
     positions,
     presence,
@@ -26,12 +24,10 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 app.include_router(workers.router)
 app.include_router(org_chart.router)
 app.include_router(presence.router)
-app.include_router(departments.router)
 app.include_router(teams.router)
 app.include_router(positions.router)
 app.include_router(skills.router)
 app.include_router(documents.router)
-app.include_router(leave.router)
 app.include_router(reports.router)
 app.include_router(export.router)
 app.include_router(search.router)

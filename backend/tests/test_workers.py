@@ -7,25 +7,7 @@ async def test_list_workers(client, seed_db):
     resp = await client.get("/workers")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 6
-
-
-@pytest.mark.asyncio
-async def test_list_workers_filter_department(client, seed_db):
-    eng = seed_db["eng"]
-    resp = await client.get(f"/workers?department_id={eng.id}")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert len(data) == 3
-
-
-@pytest.mark.asyncio
-async def test_list_workers_filter_status(client, seed_db):
-    resp = await client.get("/workers?status=On Leave")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert len(data) == 1
-    assert data[0]["status"] == "On Leave"
+    assert len(data) == 5
 
 
 @pytest.mark.asyncio
@@ -165,3 +147,43 @@ async def test_update_worker_manager(client, seed_db):
     assert resp.status_code == 200
     data = resp.json()
     assert data["manager_id"] == ceo.id
+
+
+@pytest.mark.asyncio
+async def test_delete_worker(client, seed_db):
+    contractor = seed_db["contractor"]
+    resp = await client.delete(f"/workers/{contractor.id}")
+    assert resp.status_code == 204
+
+    list_resp = await client.get("/workers")
+    assert len(list_resp.json()) == 4
+
+
+@pytest.mark.asyncio
+async def test_delete_worker_not_found(client, seed_db):
+    resp = await client.delete("/workers/99999")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_worker_clears_manager_refs(client, seed_db):
+    mgr = seed_db["mgr"]
+    ic = seed_db["ic"]
+    resp = await client.delete(f"/workers/{mgr.id}")
+    assert resp.status_code == 204
+
+    get_resp = await client.get(f"/workers/{ic.id}")
+    assert get_resp.json()["manager_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_delete_worker_removes_skills(client, seed_db, db):
+    from app.models.worker import WorkerSkill
+    from sqlalchemy import select
+
+    ic = seed_db["ic"]
+    resp = await client.delete(f"/workers/{ic.id}")
+    assert resp.status_code == 204
+
+    result = await db.execute(select(WorkerSkill).where(WorkerSkill.worker_id == ic.id))
+    assert result.scalars().all() == []

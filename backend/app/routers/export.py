@@ -23,14 +23,14 @@ async def export_workers(
     workers = result.scalars().all()
     columns = [
         "ID", "Type", "First Name", "Last Name", "Email", "Phone",
-        "Job Title", "Department ID", "Team ID", "Manager ID",
+        "Job Title", "Team ID", "Manager ID",
         "Employment Type", "Status", "Office Location",
     ]
     rows = [
         [
             w.id, w.type, w.first_name, w.last_name, w.email or "",
-            w.phone or "", w.job_title or "", w.department_id or "",
-            w.team_id or "", w.manager_id or "", w.employment_type or "",
+            w.phone or "", w.job_title or "", w.team_id or "",
+            w.manager_id or "", w.employment_type or "",
             w.status, w.office_location or "",
         ]
         for w in workers

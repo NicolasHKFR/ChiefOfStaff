@@ -28,7 +28,6 @@ class WorkerOut(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     job_title: Optional[str] = None
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     manager_id: Optional[int] = None
     employment_type: Optional[str] = None
@@ -48,7 +47,6 @@ class WorkerCreate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     job_title: Optional[str] = None
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     manager_id: Optional[int] = None
     employment_type: Optional[str] = None
@@ -68,7 +66,6 @@ class WorkerUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     job_title: Optional[str] = None
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     manager_id: Optional[int] = None
     employment_type: Optional[str] = None
@@ -80,39 +77,24 @@ class WorkerUpdate(BaseModel):
     custom_fields: Optional[dict] = None
 
 
-class DepartmentOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    organization_id: int
-    name: str
-    cost_center_id: Optional[str] = None
-    parent_department_id: Optional[int] = None
-
-
-class DepartmentCreate(BaseModel):
-    organization_id: int
-    name: str
-    cost_center_id: Optional[str] = None
-    parent_department_id: Optional[int] = None
-
-
 class TeamOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    department_id: int
     name: str
+    manager_id: Optional[int] = None
+    parent_team_id: Optional[int] = None
 
 
 class TeamCreate(BaseModel):
-    department_id: int
     name: str
+    manager_id: Optional[int] = None
+    parent_team_id: Optional[int] = None
 
 
 class PositionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     job_title: str
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     employment_type: Optional[str] = None
     status: str
@@ -122,7 +104,6 @@ class PositionOut(BaseModel):
 
 class PositionCreate(BaseModel):
     job_title: str
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     employment_type: Optional[str] = None
     status: str = "Vacant"
@@ -130,21 +111,14 @@ class PositionCreate(BaseModel):
     linked_worker_id: Optional[int] = None
 
 
-class DepartmentUpdate(BaseModel):
-    organization_id: Optional[int] = None
-    name: Optional[str] = None
-    cost_center_id: Optional[str] = None
-    parent_department_id: Optional[int] = None
-
-
 class TeamUpdate(BaseModel):
-    department_id: Optional[int] = None
     name: Optional[str] = None
+    manager_id: Optional[int] = None
+    parent_team_id: Optional[int] = None
 
 
 class PositionUpdate(BaseModel):
     job_title: Optional[str] = None
-    department_id: Optional[int] = None
     team_id: Optional[int] = None
     employment_type: Optional[str] = None
     status: Optional[str] = None
@@ -172,34 +146,6 @@ class DocumentOut(BaseModel):
     file_url: str
     uploaded_at: Optional[datetime] = None
     visibility_scope: Optional[str] = None
-
-
-class LeaveTypeOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    name: str
-    requires_approval: int
-
-
-class LeaveRequestOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    worker_id: int
-    leave_type_id: int
-    start_date: date
-    end_date: date
-    comment: Optional[str] = None
-    status: str
-    approver_id: Optional[int] = None
-    decided_at: Optional[datetime] = None
-
-
-class LeaveRequestCreate(BaseModel):
-    worker_id: int
-    leave_type_id: int
-    start_date: date
-    end_date: date
-    comment: Optional[str] = None
 
 
 class AuditLogOut(BaseModel):

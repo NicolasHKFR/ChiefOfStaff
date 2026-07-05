@@ -36,7 +36,7 @@ async def get_presence(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Worker)
         .where(Worker.status != "Terminated")
-        .order_by(Worker.department_id, Worker.last_name)
+        .order_by(Worker.team_id, Worker.last_name)
     )
     workers = result.scalars().all()
 
@@ -70,7 +70,6 @@ async def get_presence(db: AsyncSession = Depends(get_db)):
                 "first_name": w.first_name,
                 "last_name": w.last_name,
                 "job_title": w.job_title,
-                "department_id": w.department_id,
                 "team_id": w.team_id,
                 "manager_id": w.manager_id,
                 "type": w.type,

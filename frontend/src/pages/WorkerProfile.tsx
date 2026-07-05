@@ -1,20 +1,21 @@
 import {
+  Alert,
   Button,
   Card,
   Group,
+  LoadingOverlay,
+  Modal,
+  Select,
   SimpleGrid,
   Text,
   TextInput,
-  Select,
   Title,
-  LoadingOverlay,
-  Alert,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useUpdateWorker, useWorker } from "../api/hooks";
+import { useDeleteWorker, useUpdateWorker, useWorker } from "../api/hooks";
 
 export default function WorkerProfile() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ export default function WorkerProfile() {
   const { data: worker, isLoading } = useWorker(workerId);
   const updateWorker = useUpdateWorker();
   const navigate = useNavigate();
+  const deleteWorker = useDeleteWorker();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -41,6 +44,16 @@ export default function WorkerProfile() {
       notifications.show({ title: "Saved", message: "Profile updated", color: "green" });
     } catch {
       notifications.show({ title: "Error", message: "Failed to save", color: "red" });
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteWorker.mutateAsync(workerId);
+      notifications.show({ title: "Deleted", message: "Worker removed", color: "orange" });
+      navigate("/");
+    } catch {
+      notifications.show({ title: "Error", message: "Failed to delete", color: "red" });
     }
   };
 
@@ -75,8 +88,17 @@ export default function WorkerProfile() {
         <Group>
           <Button type="submit" loading={updateWorker.isPending}>Save</Button>
           <Button variant="light" onClick={() => navigate("/")}>Back</Button>
+          <Button color="red" variant="outline" onClick={() => setDeleteModalOpen(true)}>Delete</Button>
         </Group>
       </form>
+
+      <Modal opened={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Confirm Deletion" centered>
+        <Text mb="lg">Remove {worker.first_name} {worker.last_name} from the system?</Text>
+        <Group justify="flex-end">
+          <Button variant="light" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
+          <Button color="red" loading={deleteWorker.isPending} onClick={handleDelete}>Delete</Button>
+        </Group>
+      </Modal>
     </div>
   );
 }

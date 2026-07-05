@@ -13,16 +13,6 @@ async def test_audit_worker_update_logged(client, seed_db, db):
 
 
 @pytest.mark.asyncio
-async def test_audit_department_update_logged(client, seed_db):
-    eng = seed_db["eng"]
-    await client.patch(f"/departments/{eng.id}", json={"name": "Engineering Dept"})
-    resp = await client.get(f"/audit-log/Department/{eng.id}")
-    data = resp.json()
-    assert len(data) >= 1
-    assert data[0]["field_changed"] == "name"
-
-
-@pytest.mark.asyncio
 async def test_audit_team_update_logged(client, seed_db):
     frontend = seed_db["frontend"]
     await client.patch(f"/teams/{frontend.id}", json={"name": "FE Team"})

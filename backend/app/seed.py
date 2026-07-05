@@ -7,8 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory, engine
 from app.database import Base
-from app.models.department import Department
-from app.models.leave import LeaveRequest, LeaveType
 from app.models.organization import Organization
 from app.models.position import Position
 from app.models.skill import Skill
@@ -27,19 +25,6 @@ async def seed():
         db.add(org)
         await db.flush()
 
-        eng = Department(organization_id=org.id, name="Engineering")
-        mkt = Department(organization_id=org.id, name="Marketing")
-        hr = Department(organization_id=org.id, name="HR & Operations")
-        db.add_all([eng, mkt, hr])
-        await db.flush()
-
-        frontend = Team(department_id=eng.id, name="Frontend")
-        backend = Team(department_id=eng.id, name="Backend")
-        content = Team(department_id=mkt.id, name="Content")
-        recruiting = Team(department_id=hr.id, name="Recruiting")
-        db.add_all([frontend, backend, content, recruiting])
-        await db.flush()
-
         ceo = Worker(
             type="Employee", first_name="Alex", last_name="Chen",
             email="alex@cosixis.io", job_title="CEO",
@@ -48,58 +33,51 @@ async def seed():
         db.add(ceo)
         await db.flush()
 
-        cto = Worker(
+        eng_lead = Worker(
             type="Employee", first_name="Jordan", last_name="Patel",
             email="jordan@cosixis.io", job_title="CTO",
-            department_id=eng.id, manager_id=ceo.id,
-            start_date=date(2020, 3, 1), status="Active",
+            manager_id=ceo.id, start_date=date(2020, 3, 1), status="Active",
         )
-        cmo = Worker(
+        mkt_lead = Worker(
             type="Employee", first_name="Morgan", last_name="Taylor",
             email="morgan@cosixis.io", job_title="CMO",
-            department_id=mkt.id, manager_id=ceo.id,
-            start_date=date(2020, 3, 1), status="Active",
+            manager_id=ceo.id, start_date=date(2020, 3, 1), status="Active",
         )
-        hr_head = Worker(
+        hr_lead = Worker(
             type="Employee", first_name="Sam", last_name="Williams",
             email="sam@cosixis.io", job_title="Head of People",
-            department_id=hr.id, manager_id=ceo.id,
-            start_date=date(2021, 6, 1), status="Active",
+            manager_id=ceo.id, start_date=date(2021, 6, 1), status="Active",
         )
-        db.add_all([cto, cmo, hr_head])
+        db.add_all([eng_lead, mkt_lead, hr_lead])
         await db.flush()
 
-        engineers = [
+        frontend = Team(name="Frontend", manager_id=eng_lead.id)
+        backend = Team(name="Backend", manager_id=eng_lead.id)
+        content = Team(name="Content", manager_id=mkt_lead.id)
+        recruiting = Team(name="Recruiting", manager_id=hr_lead.id)
+        db.add_all([frontend, backend, content, recruiting])
+        await db.flush()
+
+        db.add_all([
             Worker(type="Employee", first_name="Riley", last_name="Kim", email="riley@cosixis.io",
-                   job_title="Senior Frontend Engineer", department_id=eng.id, team_id=frontend.id,
-                   manager_id=cto.id, start_date=date(2021, 2, 1), status="Active"),
+                   job_title="Senior Frontend Engineer", team_id=frontend.id,
+                   manager_id=eng_lead.id, start_date=date(2021, 2, 1), status="Active"),
             Worker(type="Employee", first_name="Casey", last_name="Nguyen", email="casey@cosixis.io",
-                   job_title="Backend Engineer", department_id=eng.id, team_id=backend.id,
-                   manager_id=cto.id, start_date=date(2022, 4, 1), status="Active"),
+                   job_title="Backend Engineer", team_id=backend.id,
+                   manager_id=eng_lead.id, start_date=date(2022, 4, 1), status="Active"),
             Worker(type="Contractor", first_name="Drew", last_name="Martinez", email="drew@cosixis.io",
-                   job_title="DevOps Engineer", department_id=eng.id, team_id=backend.id,
-                   manager_id=cto.id, start_date=date(2023, 1, 1), status="Active"),
-        ]
-        db.add_all(engineers)
-        await db.flush()
-
-        marketers = [
+                   job_title="DevOps Engineer", team_id=backend.id,
+                   manager_id=eng_lead.id, start_date=date(2023, 1, 1), status="Active"),
             Worker(type="Employee", first_name="Jamie", last_name="Rodriguez", email="jamie@cosixis.io",
-                   job_title="Content Lead", department_id=mkt.id, team_id=content.id,
-                   manager_id=cmo.id, start_date=date(2022, 9, 1), status="Active"),
+                   job_title="Content Lead", team_id=content.id,
+                   manager_id=mkt_lead.id, start_date=date(2022, 9, 1), status="Active"),
             Worker(type="Employee", first_name="Taylor", last_name="Brown", email="taylor@cosixis.io",
-                   job_title="Marketing Designer", department_id=mkt.id, team_id=content.id,
-                   manager_id=cmo.id, start_date=date(2023, 6, 15), status="Active"),
-        ]
-        db.add_all(marketers)
-        await db.flush()
-
-        ops = [
+                   job_title="Marketing Designer", team_id=content.id,
+                   manager_id=mkt_lead.id, start_date=date(2023, 6, 15), status="Active"),
             Worker(type="Employee", first_name="Avery", last_name="Garcia", email="avery@cosixis.io",
-                   job_title="Recruiter", department_id=hr.id, team_id=recruiting.id,
-                   manager_id=hr_head.id, start_date=date(2022, 1, 10), status="Active"),
-        ]
-        db.add_all(ops)
+                   job_title="Recruiter", team_id=recruiting.id,
+                   manager_id=hr_lead.id, start_date=date(2022, 1, 10), status="Active"),
+        ])
         await db.flush()
 
         skills_data = [
@@ -113,34 +91,16 @@ async def seed():
         await db.flush()
 
         positions_data = [
-            Position(job_title="Senior Backend Engineer", department_id=eng.id, team_id=backend.id,
+            Position(job_title="Senior Backend Engineer", team_id=backend.id,
                      status="Vacant", employment_type="Full-time"),
-            Position(job_title="Product Manager", department_id=eng.id, status="Planned",
+            Position(job_title="Product Manager", status="Planned",
                      target_start_date=date(2026, 9, 1)),
-            Position(job_title="Marketing Intern", department_id=mkt.id, team_id=content.id,
+            Position(job_title="Marketing Intern", team_id=content.id,
                      status="Vacant", employment_type="Intern"),
         ]
         db.add_all(positions_data)
         await db.flush()
 
-        leave_types = [
-            LeaveType(name="Annual Leave", requires_approval=1),
-            LeaveType(name="Sick Leave", requires_approval=0),
-            LeaveType(name="Personal Leave", requires_approval=1),
-        ]
-        db.add_all(leave_types)
-        await db.flush()
-
-        leave_requests = [
-            LeaveRequest(worker_id=engineers[0].id, leave_type_id=1,
-                         start_date=date(2026, 7, 10), end_date=date(2026, 7, 14),
-                         comment="Vacation", status="Pending"),
-            LeaveRequest(worker_id=engineers[1].id, leave_type_id=2,
-                         start_date=date(2026, 6, 5), end_date=date(2026, 6, 5),
-                         comment="Doctor appointment", status="Approved",
-                         approver_id=cto.id),
-        ]
-        db.add_all(leave_requests)
         await db.commit()
 
     print("Seed data loaded successfully!")

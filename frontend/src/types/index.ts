@@ -7,7 +7,6 @@ export interface Worker {
   email?: string;
   phone?: string;
   job_title?: string;
-  department_id?: number;
   team_id?: number;
   manager_id?: number;
   employment_type?: string;
@@ -19,24 +18,16 @@ export interface Worker {
   custom_fields?: Record<string, unknown>;
 }
 
-export interface Department {
-  id: number;
-  organization_id: number;
-  name: string;
-  cost_center_id?: string;
-  parent_department_id?: number;
-}
-
 export interface Team {
   id: number;
-  department_id: number;
   name: string;
+  manager_id?: number;
+  parent_team_id?: number;
 }
 
 export interface Position {
   id: number;
   job_title: string;
-  department_id?: number;
   team_id?: number;
   employment_type?: string;
   status: string;
@@ -57,24 +48,6 @@ export interface Document {
   file_url: string;
   uploaded_at?: string;
   visibility_scope?: string;
-}
-
-export interface LeaveType {
-  id: number;
-  name: string;
-  requires_approval: number;
-}
-
-export interface LeaveRequest {
-  id: number;
-  worker_id: number;
-  leave_type_id: number;
-  start_date: string;
-  end_date: string;
-  comment?: string;
-  status: string;
-  approver_id?: number;
-  decided_at?: string;
 }
 
 export interface AuditLog {

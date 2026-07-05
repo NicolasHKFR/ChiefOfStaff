@@ -12,13 +12,6 @@ async def test_search_finds_workers(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_search_finds_departments(client, seed_db):
-    resp = await client.get("/search?q=engineering")
-    data = resp.json()
-    assert len(data["departments"]) >= 1
-
-
-@pytest.mark.asyncio
 async def test_search_finds_teams(client, seed_db):
     resp = await client.get("/search?q=frontend")
     data = resp.json()

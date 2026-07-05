@@ -15,7 +15,6 @@ class Worker(Base):
     email = Column(String(255), nullable=True, unique=True)
     phone = Column(String(50), nullable=True)
     job_title = Column(String(255), nullable=True)
-    department_id = Column(Integer, ForeignKey("department.id"), nullable=True)
     team_id = Column(Integer, ForeignKey("team.id"), nullable=True)
     manager_id = Column(Integer, ForeignKey("worker.id"), nullable=True)
     employment_type = Column(String(50), nullable=True)

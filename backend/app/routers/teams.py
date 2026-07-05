@@ -1,20 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.database import get_db
 from app.models.team import Team
+from app.models.worker import Worker
 from app.schemas.common import TeamCreate, TeamOut, TeamUpdate
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
 
 @router.get("", response_model=list[TeamOut])
-async def list_teams(department_id: int | None = None, db: AsyncSession = Depends(get_db)):
-    stmt = select(Team).order_by(Team.name)
-    if department_id:
-        stmt = stmt.where(Team.department_id == department_id)
-    result = await db.execute(stmt)
+async def list_teams(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Team).order_by(Team.name))
     return result.scalars().all()
 
 
@@ -45,3 +44,6 @@ async def update_team(team_id: int, data: TeamUpdate, db: AsyncSession = Depends
     await db.commit()
     await db.refresh(team)
     return team
+
+
+

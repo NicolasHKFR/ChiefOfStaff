@@ -5,7 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.worker import Worker
+from app.models.document import Document
+from app.models.position import Position
+from app.models.worker import Worker, WorkerSkill
 from app.schemas.common import WorkerCreate, WorkerOut, WorkerUpdate
 
 DUPLICATE_MSG = "A worker with this email already exists"
@@ -15,14 +17,11 @@ router = APIRouter(prefix="/workers", tags=["Workers"])
 
 @router.get("", response_model=list[WorkerOut])
 async def list_workers(
-    department_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Worker)
-    if department_id:
-        stmt = stmt.where(Worker.department_id == department_id)
     if status:
         stmt = stmt.where(Worker.status == status)
     if q:
@@ -71,3 +70,18 @@ async def update_worker(
     await db.commit()
     await db.refresh(worker)
     return worker
+
+
+@router.delete("/{worker_id}", status_code=204)
+async def delete_worker(worker_id: int, db: AsyncSession = Depends(get_db)):
+    worker = await db.get(Worker, worker_id)
+    if not worker:
+        raise HTTPException(404, "Worker not found")
+
+    await db.execute(WorkerSkill.__table__.delete().where(WorkerSkill.worker_id == worker_id))
+    await db.execute(Document.__table__.delete().where(Document.worker_id == worker_id))
+    await db.execute(Worker.__table__.update().where(Worker.manager_id == worker_id).values(manager_id=None))
+    await db.execute(Position.__table__.update().where(Position.linked_worker_id == worker_id).values(linked_worker_id=None))
+
+    await db.delete(worker)
+    await db.commit()

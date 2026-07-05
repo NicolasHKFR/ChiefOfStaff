@@ -36,13 +36,9 @@ if %errorlevel% neq 0 (
     echo [WARN] pip install had issues, continuing...
 )
 
-:: Seed database
+:: Seed database (comment out to preserve data across restarts)
 echo.
-echo [2/4] Seeding database...
-python -m app.seed
-if %errorlevel% neq 0 (
-    echo [WARN] Seed may have failed. Check for existing data.
-)
+echo [2/4] Skipping seed (run 'python -m app.seed' manually to reset data)...
 
 :: Install frontend dependencies if needed
 echo.

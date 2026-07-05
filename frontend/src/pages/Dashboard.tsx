@@ -1,10 +1,12 @@
 import { Card, Group, RingProgress, SimpleGrid, Table, Text, Title } from "@mantine/core";
-import { useHeadcountReport, useLeaveStats, useWorkers } from "../api/hooks";
+import { useHeadcountReport, useTeams, useWorkers } from "../api/hooks";
 
 export default function Dashboard() {
   const { data: workers } = useWorkers();
   const { data: headcount } = useHeadcountReport();
-  const { data: leaveStats } = useLeaveStats();
+  const { data: teams } = useTeams();
+
+  const teamMap = Object.fromEntries((teams || []).map((t) => [t.id, t.name]));
 
   const activeWorkers = workers?.filter((w) => w.status === "Active") || [];
   const employeeCount = activeWorkers.filter((w) => w.type === "Employee").length;
@@ -48,20 +50,18 @@ export default function Dashboard() {
         </Card>
 
         <Card withBorder>
-          <Title order={4} mb="sm">Leave Stats</Title>
+          <Title order={4} mb="sm">Headcount by Team</Title>
           <Table>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Type</Table.Th>
-                <Table.Th>Status</Table.Th>
+                <Table.Th>Team</Table.Th>
                 <Table.Th>Count</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {leaveStats?.map((s: any, i: number) => (
+              {(headcount?.by_team || []).map((s: any, i: number) => (
                 <Table.Tr key={i}>
-                  <Table.Td>{s.leave_type}</Table.Td>
-                  <Table.Td>{s.status}</Table.Td>
+                  <Table.Td>{teamMap[s.team_id] || "Unassigned"}</Table.Td>
                   <Table.Td>{s.count}</Table.Td>
                 </Table.Tr>
               ))}
