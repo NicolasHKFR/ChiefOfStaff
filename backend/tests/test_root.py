@@ -1,0 +1,11 @@
+"""Test root health-check endpoint."""
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_root(client):
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert "app" in data

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/*.db
+backend/.coverage
+backend/htmlcov/
+
+# Uploads (but keep the dir)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Env
+.env
+.env.local

@@ -1,0 +1,190 @@
+# Technical Specification Document
+## Chief of Staff Platform
+
+**Version:** 1.0
+**Based on:** Business Requirements Document v1.0
+**Target Scale:** ~100 active users, small-to-medium business
+
+---
+
+## 1. Architecture Overview
+
+### 1.1 Architectural Style
+A modular monolith is recommended over microservices given the target scale (~100 users, single organization, no multi-company/multi-country requirements). This minimizes operational overhead while keeping clear internal boundaries (People, Org Structure, Positions, Leave, Documents, Reporting) that could be extracted later if needed.
+
+### 1.2 High-Level Components
+
+| Layer | Responsibility |
+|---|---|
+| Web Client (SPA) | Org chart rendering, directory, dashboards, forms |
+| API Gateway / Backend | Business logic, auth, validation, workflow |
+| Relational Database | System of record for people, org, positions, leave |
+| Notification Service | In-app notifications (async job/queue driven) |
+| Reporting/Export Engine | Dashboard aggregation, Excel/CSV export |
+
+### 1.3 Suggested Technology Stack
+
+| Concern | Recommendation | Notes |
+|---|---|---|
+| Frontend | React (TypeScript) + a chart library (e.g., D3.js or a dedicated org-chart library) | SPA with responsive layout |
+| Backend | Node.js (NestJS) or Python (Django/FastAPI) | REST or GraphQL API |
+| Database | PostgreSQL | Strong relational integrity for org hierarchy; supports recursive CTEs for tree queries |
+
+
+---
+
+## 2. Data Model
+
+### 2.1 Core Entities
+
+**Organization**
+- id, name, settings (JSON: locale, fiscal year, branding)
+
+**Department**
+- id, organization_id, name, cost_center_id (nullable), parent_department_id (nullable, for sub-departments)
+
+**Team**
+- id, department_id, name
+
+**Position**
+- id, job_title, department_id, team_id, employment_type, status (Filled / Vacant / Planned), target_start_date (nullable), linked_worker_id (nullable)
+
+**Worker** (unified profile for employees and contractors)
+- id, type (Employee / Contractor), first_name, last_name, photo_url, email, phone, job_title, department_id, team_id, manager_id (self-referencing FK), employment_type, start_date, end_date (nullable), status (Active / On Leave / Terminated), office_location (nullable)
+- Contractor-specific: supplier_agency_name, contract_end_date, rate_type (Daily/Hourly), rate_amount
+- Compensation: annual_salary (nullable, employees), daily_rate / hourly_rate (nullable, contractors)
+
+**Skill**
+- id, name, category
+
+**WorkerSkill** (many-to-many)
+- worker_id, skill_id, proficiency_level (optional)
+
+**Document**
+- id, worker_id, category (Contract / NDA / Work Permit / Visa / Certification / Other), file_url, uploaded_by, uploaded_at, visibility_scope
+
+**LeaveRequest**
+- id, worker_id, leave_type, start_date, end_date, comment, status (Pending / Approved / Rejected), approver_id, decided_at
+
+**LeaveType**
+- id, name, requires_approval (boolean)
+
+**AuditLog**
+- id, entity_type, entity_id, field_changed, previous_value, new_value, changed_by, changed_at
+
+**Notification**
+- id, recipient_id, type, payload, read_status, created_at
+
+**CustomField** (admin-configurable)
+- id, entity_type, field_name, field_type, options (JSON)
+
+### 2.2 Key Relationships & Constraints
+- `Worker.manager_id` → self-referencing FK on `Worker`; enforces the "one direct manager" rule.
+- `Worker.team_id` → FK on `Team`; each worker belongs to exactly one team (enforced NOT NULL after onboarding).
+- `Team.department_id` → FK on `Department`; each team belongs to exactly one department.
+- Org chart is derived, not stored: computed via recursive query on `Worker.manager_id`, joined with `Position` for vacancies.
+- Circular manager references must be prevented at the application layer (validation before write).
+
+### 2.3 Sample Org Hierarchy Query (PostgreSQL, recursive CTE)
+```sql
+WITH RECURSIVE org_tree AS (
+  SELECT id, first_name, last_name, manager_id, 0 AS depth
+  FROM worker WHERE manager_id IS NULL
+  UNION ALL
+  SELECT w.id, w.first_name, w.last_name, w.manager_id, ot.depth + 1
+  FROM worker w
+  JOIN org_tree ot ON w.manager_id = ot.id
+)
+SELECT * FROM org_tree ORDER BY depth;
+```
+
+---
+
+## 3. API Design (REST, indicative)
+
+| Endpoint | Method | Purpose | Role(s) |
+|---|---|---|---|
+| `/workers` | GET/POST | List/search directory, create worker | HR/Admin (write), all (read) |
+| `/workers/{id}` | GET/PATCH | View/update profile | Role-based field restrictions |
+| `/workers/{id}/documents` | GET/POST | List/upload documents | HR/Admin, restricted read |
+| `/org-chart` | GET | Fetch hierarchy tree (supports depth/branch params) | All |
+| `/positions` | GET/POST/PATCH | Manage open/planned positions | HR/Admin |
+| `/departments`, `/teams` | GET/POST/PATCH | Configuration | Admin |
+| `/skills` | GET/POST | Skill directory, search | All (read), Admin (write) |
+| `/leave-requests` | GET/POST/PATCH | Submit, approve/reject | Employee (submit), Manager (approve) |
+| `/reports/{type}` | GET | Dashboard data | Role-based |
+| `/export/{entity}` | GET | CSV/Excel export | HR/Admin, Manager (scoped) |
+| `/search?q=` | GET | Global search across entities | All |
+| `/audit-log/{entity}/{id}` | GET | Change history | Admin/HR |
+
+**Authentication:** All endpoints require a valid OIDC-issued JWT (bearer token) validated against the configured IdP.
+
+**Authorization:** Enforced via middleware mapping the four roles (Administrator, HR/Operations, Manager, Employee) to permission sets per resource and field. Field-level restrictions (e.g., Employee can edit limited fields on own profile) should be enforced server-side, not just hidden in the UI.
+
+---
+
+## 4. Security
+
+- **no authentication - single user
+- **Data in Transit:** TLS 1.2+ enforced on all endpoints.
+- **PII Handling:** Personal data (salary, contact info, documents) flagged as sensitive fields; access logged for audit-relevant categories.
+- **Audit Logging:** Immutable append-only log for manager, department, team, job title, employment type, and status changes, per BRD §8.
+
+---
+
+## 5. Non-Functional Requirements Mapping
+
+| BRD Requirement | Technical Approach |
+|---|---|
+| ~100 active users | Single-instance deployment with vertical scaling sufficient; no need for horizontal sharding |
+| Modern browser support | SPA targeting evergreen browsers (Chrome, Edge, Firefox, Safari, last 2 versions) |
+| Responsive UI | CSS responsive breakpoints; mobile-friendly layout for directory/org chart views |
+| <2s page load | CDN-served static assets, server-side pagination, indexed DB queries, caching for org-chart reads |
+| Auto-save | Debounced client-side auto-save on form fields where specified |
+| CSV/Excel import-export | Backend generation via a library (e.g., SheetJS/openpyxl); async job for large exports |
+| Daily backups | Automated DB snapshot policy (e.g., point-in-time recovery enabled) + object storage versioning |
+| Role-based data protection | RBAC enforced at API layer, described in §4 |
+
+---
+
+## 6. Notifications & Background Jobs
+
+not needed
+
+---
+
+## 7. Reporting & Export
+
+- Dashboards computed via read-optimized queries/materialized views (headcount, employees vs. contractors, cost by department, seniority distribution, etc.).
+- Standard dashboards only in v1 — no custom report builder (explicitly out of scope).
+- Export engine generates CSV/XLSX server-side; large exports handled asynchronously with a download-ready notification.
+
+---
+
+## 8. Configuration & Extensibility
+
+- Admin-configurable entities (departments, teams, job titles, employment types, cost centers, leave types, skill categories, approval delegates) stored as data, not code, so no deployment is needed for configuration changes.
+- Custom employee fields modeled via an EAV-style (`CustomField` + value table) or JSONB column on `Worker` to allow schema-flexible extension without migrations for every new field.
+- Modular monolith boundaries chosen to ease future extraction of Payroll, ATS, Performance, or LMS modules (explicitly listed as future enhancements) without major redesign.
+
+---
+
+## 9. Deployment & Environments
+
+| Environment | Purpose |
+|---|---|
+| Development | Feature development, local Docker Compose stack |
+| Staging | Pre-production validation, SSO test tenants |
+| Production | Live system, daily backups, monitoring/alerting enabled |
+
+Recommended baseline: containerized services behind a load balancer, managed PostgreSQL instance, managed object storage, and a managed Redis instance for job queues.
+
+---
+
+## 10. Out-of-Scope Confirmation
+
+The following are explicitly excluded from this technical design (per BRD §3) and require no schema/API support in v1: payroll processing, ATS/recruitment, performance reviews, LMS, compensation management (beyond basic salary/rate fields for cost estimation), benefits administration, time tracking, expense management, multi-company/multi-country support, accounting, e-signatures, advanced workflow engines, and custom report builders.
+
+---
+
+

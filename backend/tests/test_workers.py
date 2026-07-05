@@ -1,0 +1,171 @@
+"""Test /workers CRUD endpoints."""
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_list_workers(client, seed_db):
+    resp = await client.get("/workers")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 6
+
+
+@pytest.mark.asyncio
+async def test_list_workers_filter_department(client, seed_db):
+    eng = seed_db["eng"]
+    resp = await client.get(f"/workers?department_id={eng.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 3
+
+
+@pytest.mark.asyncio
+async def test_list_workers_filter_status(client, seed_db):
+    resp = await client.get("/workers?status=On Leave")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["status"] == "On Leave"
+
+
+@pytest.mark.asyncio
+async def test_list_workers_filter_status_terminated(client, seed_db):
+    resp = await client.get("/workers?status=Terminated")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["status"] == "Terminated"
+
+
+@pytest.mark.asyncio
+async def test_list_workers_search(client, seed_db):
+    resp = await client.get("/workers?q=charlie")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["email"] == "charlie@test.com"
+
+
+@pytest.mark.asyncio
+async def test_list_workers_search_by_email(client, seed_db):
+    resp = await client.get("/workers?q=bob@test.com")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_workers_search_empty(client, seed_db):
+    resp = await client.get("/workers?q=zzzznonexistent")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data == []
+
+
+@pytest.mark.asyncio
+async def test_get_worker(client, seed_db):
+    ic = seed_db["ic"]
+    resp = await client.get(f"/workers/{ic.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["first_name"] == "Charlie"
+    assert data["email"] == "charlie@test.com"
+
+
+@pytest.mark.asyncio
+async def test_get_worker_not_found(client, seed_db):
+    resp = await client.get("/workers/99999")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_create_worker(client, seed_db):
+    payload = {
+        "type": "Employee",
+        "first_name": "New",
+        "last_name": "Hire",
+        "email": "new@test.com",
+        "job_title": "Junior Engineer",
+        "status": "Active",
+    }
+    resp = await client.post("/workers", json=payload)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["first_name"] == "New"
+    assert data["email"] == "new@test.com"
+    assert data["status"] == "Active"
+
+
+@pytest.mark.asyncio
+async def test_create_worker_duplicate_email(client, seed_db):
+    payload = {
+        "type": "Employee",
+        "first_name": "Dup",
+        "last_name": "User",
+        "email": "bob@test.com",
+    }
+    resp = await client.post("/workers", json=payload)
+    assert resp.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_create_worker_missing_required(client, seed_db):
+    resp = await client.post("/workers", json={"first_name": "NoType"})
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_worker_contractor(client, seed_db):
+    payload = {
+        "type": "Contractor",
+        "first_name": "Ext",
+        "last_name": "Worker",
+        "email": "ext@test.com",
+        "supplier_agency_name": "ExtStaff",
+        "rate_type": "Hourly",
+        "rate_amount": 100,
+    }
+    resp = await client.post("/workers", json=payload)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["supplier_agency_name"] == "ExtStaff"
+    assert data["rate_amount"] == 100.0
+
+
+@pytest.mark.asyncio
+async def test_update_worker_partial(client, seed_db):
+    ic = seed_db["ic"]
+    resp = await client.patch(f"/workers/{ic.id}", json={"job_title": "Senior Engineer"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["job_title"] == "Senior Engineer"
+    assert data["first_name"] == "Charlie"
+
+
+@pytest.mark.asyncio
+async def test_update_worker_dates(client, seed_db):
+    ic = seed_db["ic"]
+    resp = await client.patch(f"/workers/{ic.id}", json={
+        "start_date": "2022-06-15",
+        "end_date": "2027-12-31",
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["start_date"] == "2022-06-15"
+    assert data["end_date"] == "2027-12-31"
+
+
+@pytest.mark.asyncio
+async def test_update_worker_not_found(client, seed_db):
+    resp = await client.patch("/workers/99999", json={"first_name": "Ghost"})
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_worker_manager(client, seed_db):
+    ic = seed_db["ic"]
+    ceo = seed_db["ceo"]
+    resp = await client.patch(f"/workers/{ic.id}", json={"manager_id": ceo.id})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["manager_id"] == ceo.id
