@@ -11,16 +11,21 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
+import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDeleteWorker, useUpdateWorker, useWorker } from "../api/hooks";
+import { useDeleteWorker, useUpdateWorker, useWorker, useTeams, useLocations, useWorkerTypes } from "../api/hooks";
 
 export default function WorkerProfile() {
   const { id } = useParams<{ id: string }>();
   const workerId = Number(id);
   const { data: worker, isLoading } = useWorker(workerId);
+  const { data: teams } = useTeams();
+  const { data: locations } = useLocations();
+  const { data: workerTypes } = useWorkerTypes();
   const updateWorker = useUpdateWorker();
   const navigate = useNavigate();
   const deleteWorker = useDeleteWorker();
@@ -28,9 +33,12 @@ export default function WorkerProfile() {
 
   const form = useForm({
     initialValues: {
-      first_name: "", last_name: "", email: "", phone: "",
+      first_name: "", last_name: "",
       type: "Employee",
       status: "Active", office_location: "",
+      start_date: null as string | null,
+      end_date: null as string | null,
+      team_id: null as number | null,
     },
   });
 
@@ -40,7 +48,8 @@ export default function WorkerProfile() {
 
   const handleSubmit = async (values: typeof form.values) => {
     try {
-      await updateWorker.mutateAsync({ id: workerId, data: values as any });
+      const result = await updateWorker.mutateAsync({ id: workerId, data: values as any });
+      form.setValues(result as any);
       notifications.show({ title: "Saved", message: "Profile updated", color: "green" });
     } catch {
       notifications.show({ title: "Error", message: "Failed to save", color: "red" });
@@ -69,18 +78,46 @@ export default function WorkerProfile() {
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <TextInput label="First Name" {...form.getInputProps("first_name")} />
             <TextInput label="Last Name" {...form.getInputProps("last_name")} />
-            <TextInput label="Email" {...form.getInputProps("email")} />
-            <TextInput label="Phone" {...form.getInputProps("phone")} />
           </SimpleGrid>
         </Card>
 
         <Card withBorder mb="md">
           <Title order={4} mb="sm">Details</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select label="Type" data={["Employee", "Contractor"]} {...form.getInputProps("type")} />
+            <Select label="Type" data={(workerTypes || []).map((t) => ({ value: t.name, label: t.name }))} {...form.getInputProps("type")} />
             <Select label="Status" data={["Active", "On Leave", "Terminated"]} {...form.getInputProps("status")} />
-            <TextInput label="Office Location" {...form.getInputProps("office_location")} />
+            <Select
+              label="Office Location"
+              clearable
+              searchable
+              data={(locations || []).map((l) => ({ value: l.name, label: l.name }))}
+              {...form.getInputProps("office_location")}
+            />
+            <DatePickerInput
+              label="Start Date"
+              clearable
+              value={form.values.start_date ? dayjs(form.values.start_date).toDate() : null}
+              onChange={(v) => form.setFieldValue("start_date", v ? dayjs(v).format("YYYY-MM-DD") : null)}
+            />
+            <DatePickerInput
+              label="End Date"
+              clearable
+              value={form.values.end_date ? dayjs(form.values.end_date).toDate() : null}
+              onChange={(v) => form.setFieldValue("end_date", v ? dayjs(v).format("YYYY-MM-DD") : null)}
+            />
           </SimpleGrid>
+        </Card>
+
+        <Card withBorder mb="md">
+          <Title order={4} mb="sm">Team</Title>
+          <Select
+            label="Team"
+            clearable
+            searchable
+            data={(teams || []).filter((t) => t.name !== "Root").map((t) => ({ value: String(t.id), label: t.name }))}
+            value={form.values.team_id !== null ? String(form.values.team_id) : null}
+            onChange={(v) => form.setFieldValue("team_id", v ? Number(v) : null)}
+          />
         </Card>
 
         <Group>

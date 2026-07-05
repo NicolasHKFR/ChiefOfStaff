@@ -5,10 +5,12 @@ import Directory from "./pages/Directory";
 import Documents from "./pages/Documents";
 import OrgChartPage from "./pages/OrgChartPage";
 import Presence from "./pages/Presence";
+import QualityChecks from "./pages/QualityChecks";
 import Settings from "./pages/Settings";
 import Skills from "./pages/Skills";
 import Teams from "./pages/Teams";
 import WorkerProfile from "./pages/WorkerProfile";
+import MapWorld from "./pages/MapWorld";
 import TeamChartPage from "./pages/TeamChart";
 
 export default function App() {
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/presence" element={<Presence />} />
         <Route path="/skills" element={<Skills />} />
         <Route path="/documents" element={<Documents />} />
+        <Route path="/quality-checks" element={<QualityChecks />} />
+        <Route path="/map-world" element={<MapWorld />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>

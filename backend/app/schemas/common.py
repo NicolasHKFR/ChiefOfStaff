@@ -24,14 +24,11 @@ class WorkerOut(BaseModel):
     first_name: str
     last_name: str
     photo_url: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
     team_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: str = "Active"
     office_location: Optional[str] = None
-    contract_end_date: Optional[date] = None
     custom_fields: Optional[dict] = None
 
 
@@ -40,14 +37,11 @@ class WorkerCreate(BaseModel):
     first_name: str
     last_name: str
     photo_url: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
     team_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: str = "Active"
     office_location: Optional[str] = None
-    contract_end_date: Optional[date] = None
     custom_fields: Optional[dict] = None
 
 
@@ -56,14 +50,11 @@ class WorkerUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     photo_url: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
     team_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[str] = None
     office_location: Optional[str] = None
-    contract_end_date: Optional[date] = None
     custom_fields: Optional[dict] = None
 
 
@@ -126,3 +117,92 @@ class OrganizationOut(BaseModel):
     id: int
     name: str
     settings: dict
+
+
+class QualityCheckOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    description: Optional[str] = None
+    status: str = "created"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class QualityCheckCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class QCFileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    quality_check_id: int
+    original_filename: str
+    uploaded_at: Optional[datetime] = None
+    row_count: Optional[int] = None
+
+
+class QCCheckOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    quality_check_id: int
+    check_type: str
+    status: str
+    summary: Optional[str] = None
+    details_json: Optional[dict] = None
+    created_at: Optional[datetime] = None
+
+
+
+class LocationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    address: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    created_at: Optional[datetime] = None
+
+
+class LocationCreate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class LocationUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class WorkerTypeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+
+
+class WorkerTypeCreate(BaseModel):
+    name: str
+
+
+class WorkerTypeUpdate(BaseModel):
+    name: Optional[str] = None
+
+
+class QualityCheckDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    description: Optional[str] = None
+    status: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    files: list[QCFileOut] = []
+    checks: list[QCCheckOut] = []

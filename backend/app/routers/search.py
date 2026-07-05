@@ -19,7 +19,6 @@ async def global_search(q: str = Query(min_length=1), db: AsyncSession = Depends
         .where(
             Worker.first_name.ilike(pattern)
             | Worker.last_name.ilike(pattern)
-            | Worker.email.ilike(pattern)
         )
         .limit(20)
     )

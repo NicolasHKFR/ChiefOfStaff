@@ -25,15 +25,7 @@ async def test_list_workers_search(client, seed_db):
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
-    assert data[0]["email"] == "charlie@test.com"
-
-
-@pytest.mark.asyncio
-async def test_list_workers_search_by_email(client, seed_db):
-    resp = await client.get("/workers?q=bob@test.com")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert len(data) == 1
+    assert data[0]["first_name"] == "Charlie"
 
 
 @pytest.mark.asyncio
@@ -51,7 +43,6 @@ async def test_get_worker(client, seed_db):
     assert resp.status_code == 200
     data = resp.json()
     assert data["first_name"] == "Charlie"
-    assert data["email"] == "charlie@test.com"
 
 
 @pytest.mark.asyncio
@@ -66,27 +57,13 @@ async def test_create_worker(client, seed_db):
         "type": "Employee",
         "first_name": "New",
         "last_name": "Hire",
-        "email": "new@test.com",
         "status": "Active",
     }
     resp = await client.post("/workers", json=payload)
     assert resp.status_code == 201
     data = resp.json()
     assert data["first_name"] == "New"
-    assert data["email"] == "new@test.com"
     assert data["status"] == "Active"
-
-
-@pytest.mark.asyncio
-async def test_create_worker_duplicate_email(client, seed_db):
-    payload = {
-        "type": "Employee",
-        "first_name": "Dup",
-        "last_name": "User",
-        "email": "bob@test.com",
-    }
-    resp = await client.post("/workers", json=payload)
-    assert resp.status_code == 409
 
 
 @pytest.mark.asyncio
@@ -101,7 +78,6 @@ async def test_create_worker_contractor(client, seed_db):
         "type": "Contractor",
         "first_name": "Ext",
         "last_name": "Worker",
-        "email": "ext@test.com",
     }
     resp = await client.post("/workers", json=payload)
     assert resp.status_code == 201
@@ -116,7 +92,6 @@ async def test_update_worker_partial(client, seed_db):
     assert resp.status_code == 200
     data = resp.json()
     assert data["first_name"] == "Charles"
-    assert data["email"] == "charlie@test.com"
 
 
 @pytest.mark.asyncio

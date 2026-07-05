@@ -1,9 +1,11 @@
 import { ActionIcon, Badge, Button, Card, Group, Modal, Select, Table, Text, TextInput, Title } from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
+import dayjs from "dayjs";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCreateWorker, useDeleteWorker, useTeams, useWorkers } from "../api/hooks";
+import { useCreateWorker, useDeleteWorker, useLocations, useTeams, useWorkerTypes, useWorkers } from "../api/hooks";
 
 const statusColors: Record<string, string> = {
   Active: "green",
@@ -16,6 +18,8 @@ export default function Directory() {
   const q = params.get("q") || undefined;
   const { data: workers, isLoading } = useWorkers({ q });
   const { data: teams } = useTeams();
+  const { data: locations } = useLocations();
+  const { data: workerTypes } = useWorkerTypes();
   const navigate = useNavigate();
   const deleteWorker = useDeleteWorker();
   const createWorker = useCreateWorker();
@@ -24,20 +28,26 @@ export default function Directory() {
 
   const createForm = useForm({
     initialValues: {
-      first_name: "", last_name: "", email: "", phone: "",
+      first_name: "", last_name: "",
       type: "Employee", status: "Active", office_location: "",
+      start_date: null as string | null,
+      end_date: null as string | null,
       team_id: null as number | null,
     },
   });
 
   const handleCreate = async (values: typeof createForm.values) => {
     try {
-      await createWorker.mutateAsync(values as any);
+      const clean = Object.fromEntries(
+        Object.entries(values).map(([k, v]) => [k, v === "" ? null : v])
+      ) as any;
+      await createWorker.mutateAsync(clean);
       notifications.show({ title: "Created", message: "Employee added", color: "green" });
       createForm.reset();
       setCreateOpen(false);
-    } catch {
-      notifications.show({ title: "Error", message: "Failed to create employee", color: "red" });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.message || "Unknown error";
+      notifications.show({ title: "Error", message: msg, color: "red" });
     }
   };
 
@@ -61,7 +71,7 @@ export default function Directory() {
       <Card withBorder mb="md">
         <Group>
           <TextInput
-            placeholder="Search by name or email..."
+            placeholder="Search by name..."
             defaultValue={q || ""}
             onChange={(e) => {
               const val = e.currentTarget.value;
@@ -75,7 +85,6 @@ export default function Directory() {
         <Table.Thead>
           <Table.Tr>
             <Table.Th>Name</Table.Th>
-            <Table.Th>Email</Table.Th>
             <Table.Th>Type</Table.Th>
             <Table.Th>Status</Table.Th>
             <Table.Th>Actions</Table.Th>
@@ -98,7 +107,6 @@ export default function Directory() {
               <Table.Td>
                 <Text fw={500}>{w.first_name} {w.last_name}</Text>
               </Table.Td>
-              <Table.Td>{w.email || "—"}</Table.Td>
               <Table.Td>{w.type}</Table.Td>
               <Table.Td>
                 <Badge color={statusColors[w.status] || "gray"}>{w.status}</Badge>
@@ -139,9 +147,12 @@ export default function Directory() {
         <form onSubmit={createForm.onSubmit(handleCreate)}>
           <TextInput label="First Name" required {...createForm.getInputProps("first_name")} mb="sm" />
           <TextInput label="Last Name" required {...createForm.getInputProps("last_name")} mb="sm" />
-          <TextInput label="Email" {...createForm.getInputProps("email")} mb="sm" />
-          <TextInput label="Phone" {...createForm.getInputProps("phone")} mb="sm" />
-          <Select label="Type" data={["Employee", "Contractor"]} {...createForm.getInputProps("type")} mb="sm" />
+          <Select
+            label="Type"
+            data={(workerTypes || []).map((t) => ({ value: t.name, label: t.name }))}
+            {...createForm.getInputProps("type")}
+            mb="sm"
+          />
           <Select
             label="Team"
             clearable
@@ -152,7 +163,28 @@ export default function Directory() {
             mb="sm"
           />
           <Select label="Status" data={["Active", "On Leave"]} {...createForm.getInputProps("status")} mb="sm" />
-          <TextInput label="Office Location" {...createForm.getInputProps("office_location")} mb="lg" />
+          <DatePickerInput
+            label="Start Date"
+            clearable
+            value={createForm.values.start_date ? dayjs(createForm.values.start_date).toDate() : null}
+            onChange={(v) => createForm.setFieldValue("start_date", v ? dayjs(v).format("YYYY-MM-DD") : null)}
+            mb="sm"
+          />
+          <DatePickerInput
+            label="End Date"
+            clearable
+            value={createForm.values.end_date ? dayjs(createForm.values.end_date).toDate() : null}
+            onChange={(v) => createForm.setFieldValue("end_date", v ? dayjs(v).format("YYYY-MM-DD") : null)}
+            mb="sm"
+          />
+          <Select
+            label="Office Location"
+            clearable
+            searchable
+            data={(locations || []).map((l) => ({ value: l.name, label: l.name }))}
+            {...createForm.getInputProps("office_location")}
+            mb="lg"
+          />
           <Group justify="flex-end">
             <Button variant="light" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button type="submit" loading={createWorker.isPending}>Create</Button>

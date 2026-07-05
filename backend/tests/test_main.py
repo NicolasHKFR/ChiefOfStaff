@@ -6,7 +6,6 @@ import pytest
 async def test_create_worker_then_appears_in_directory(client, seed_db):
     resp = await client.post("/workers", json={
         "type": "Employee", "first_name": "New", "last_name": "Hire",
-        "email": "newhire@test.com",
     })
     assert resp.status_code == 201
     new_id = resp.json()["id"]

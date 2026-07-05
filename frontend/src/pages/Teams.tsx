@@ -6,7 +6,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useWorkers } from "../api/hooks";
+import { useTeams, useCreateTeam, useUpdateTeam, useDeleteTeam, useUpdateWorker, useWorkers } from "../api/hooks";
 import type { Team } from "../types";
 
 interface TreeNode extends Team {
@@ -30,13 +30,14 @@ function buildTree(teams: Team[]): TreeNode[] {
   return roots;
 }
 
-function TeamRow({ node, depth, workerMap, teamWorkers, onEdit, onDelete }: {
+function TeamRow({ node, depth, workerMap, teamWorkers, onEdit, onDelete, onAddMember }: {
   node: TreeNode;
   depth: number;
   workerMap: Record<number, string>;
   teamWorkers: Record<number, { id: number; first_name: string; last_name: string }[]>;
   onEdit: (t: Team) => void;
   onDelete: (t: Team) => void;
+  onAddMember: (t: Team) => void;
 }) {
   const members = teamWorkers[node.id] || [];
   return (
@@ -58,6 +59,9 @@ function TeamRow({ node, depth, workerMap, teamWorkers, onEdit, onDelete }: {
             <ActionIcon variant="subtle" onClick={() => onEdit(node)}>
               <Text fw={700}>✎</Text>
             </ActionIcon>
+            <ActionIcon variant="subtle" color="blue" onClick={() => onAddMember(node)}>
+              <Text fw={700}>+</Text>
+            </ActionIcon>
             <ActionIcon color="red" variant="subtle" onClick={() => onDelete(node)}>
               <Text component="span" fw={700}>×</Text>
             </ActionIcon>
@@ -65,7 +69,7 @@ function TeamRow({ node, depth, workerMap, teamWorkers, onEdit, onDelete }: {
         </Table.Td>
       </Table.Tr>
       {node.children.map((child) => (
-        <TeamRow key={child.id} node={child} depth={depth + 1} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={onEdit} onDelete={onDelete} />
+        <TeamRow key={child.id} node={child} depth={depth + 1} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={onEdit} onDelete={onDelete} onAddMember={onAddMember} />
       ))}
     </>
   );
@@ -80,7 +84,10 @@ export default function Teams() {
   const [opened, { open, close }] = useDisclosure(false);
   const [editTarget, setEditTarget] = useState<Team | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Team | null>(null);
+  const [addMemberTarget, setAddMemberTarget] = useState<Team | null>(null);
+  const [addMemberWorkerId, setAddMemberWorkerId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const updateWorker = useUpdateWorker();
 
   const form = useForm({
     initialValues: { name: "", manager_id: null as number | null, parent_team_id: null as number | null },
@@ -151,6 +158,22 @@ export default function Teams() {
     setDeleteTarget(null);
   };
 
+  const handleAddMember = async () => {
+    if (!addMemberTarget || !addMemberWorkerId) return;
+    try {
+      await updateWorker.mutateAsync({ id: Number(addMemberWorkerId), data: { team_id: addMemberTarget.id } });
+      notifications.show({ title: "Added", message: "Member added to team", color: "green" });
+      setAddMemberTarget(null);
+      setAddMemberWorkerId(null);
+    } catch {
+      notifications.show({ title: "Error", message: "Failed to add member", color: "red" });
+    }
+  };
+
+  const workersNotInTeam = (workers || []).filter(
+    (w) => w.team_id !== addMemberTarget?.id && w.status !== "Terminated"
+  );
+
   const teamsWithoutRoot = (teams || []).filter((t) => t.name !== "Root");
   const tree = buildTree(teamsWithoutRoot);
 
@@ -172,7 +195,7 @@ export default function Teams() {
         </Table.Thead>
         <Table.Tbody>
           {tree.map((node) => (
-            <TeamRow key={node.id} node={node} depth={0} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={openEdit} onDelete={setDeleteTarget} />
+            <TeamRow key={node.id} node={node} depth={0} workerMap={workerMap} teamWorkers={teamWorkers} onEdit={openEdit} onDelete={setDeleteTarget} onAddMember={setAddMemberTarget} />
           ))}
           {!isLoading && tree.length === 0 && (
             <Table.Tr>
@@ -206,6 +229,22 @@ export default function Teams() {
           />
           <Button type="submit">{editTarget ? "Save" : "Create"}</Button>
         </form>
+      </Modal>
+
+      <Modal opened={!!addMemberTarget} onClose={() => { setAddMemberTarget(null); setAddMemberWorkerId(null); }} title={`Add Member to ${addMemberTarget?.name}`}>
+        <Select
+          label="Worker"
+          placeholder="Select a worker"
+          searchable
+          data={workersNotInTeam.map((w) => ({ value: String(w.id), label: `${w.first_name} ${w.last_name}` }))}
+          value={addMemberWorkerId}
+          onChange={setAddMemberWorkerId}
+          mb="sm"
+        />
+        <Group justify="flex-end">
+          <Button variant="light" onClick={() => { setAddMemberTarget(null); setAddMemberWorkerId(null); }}>Cancel</Button>
+          <Button onClick={handleAddMember} loading={updateWorker.isPending} disabled={!addMemberWorkerId}>Add</Button>
+        </Group>
       </Modal>
 
       <Modal opened={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Confirm Deletion" centered>

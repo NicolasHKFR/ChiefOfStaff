@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "../client";
 import type {
+  BackupInfo,
   Document,
+  Location,
   OrgChartTeamNode,
+  QCCheck,
+  QCFile,
+  QualityCheck,
+  QualityCheckDetail,
   Skill,
   Team,
   Worker,
+  WorkerType,
 } from "../../types";
 
 /* Workers */
@@ -40,6 +47,7 @@ export function useUpdateWorker() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["workers"] });
       qc.invalidateQueries({ queryKey: ["worker"] });
+      qc.invalidateQueries({ queryKey: ["teams"] });
       qc.invalidateQueries({ queryKey: ["orgChart"] });
     },
   });
@@ -165,6 +173,149 @@ export function usePresence() {
   return useQuery({
     queryKey: ["presence"],
     queryFn: () => client.get("/presence").then((r) => r.data),
+  });
+}
+
+/* Quality Checks */
+export function useQualityChecks() {
+  return useQuery({
+    queryKey: ["qualityChecks"],
+    queryFn: () => client.get("/quality-checks").then((r) => r.data as QualityCheck[]),
+  });
+}
+
+export function useQualityCheck(id: number) {
+  return useQuery({
+    queryKey: ["qualityCheck", id],
+    queryFn: () => client.get(`/quality-checks/${id}`).then((r) => r.data as QualityCheckDetail),
+    enabled: !!id,
+  });
+}
+
+export function useCreateQualityCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; description?: string }) =>
+      client.post("/quality-checks", data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["qualityChecks"] }),
+  });
+}
+
+export function useDeleteQualityCheck() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => client.delete(`/quality-checks/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["qualityChecks"] }),
+  });
+}
+
+export function useUploadQCFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ qcId, file }: { qcId: number; file: File }) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return client.post(`/quality-checks/${qcId}/upload`, fd).then((r) => r.data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["qualityChecks"] });
+      qc.invalidateQueries({ queryKey: ["qualityCheck"] });
+    },
+  });
+}
+
+/* Locations */
+export function useLocations() {
+  return useQuery({
+    queryKey: ["locations"],
+    queryFn: () => client.get("/locations").then((r) => r.data as Location[]),
+  });
+}
+
+export function useCreateLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; address?: string }) =>
+      client.post("/locations", data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
+  });
+}
+
+export function useUpdateLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Location> }) =>
+      client.patch(`/locations/${id}`, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
+  });
+}
+
+export function useDeleteLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => client.delete(`/locations/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["locations"] }),
+  });
+}
+
+/* Worker Types */
+export function useWorkerTypes() {
+  return useQuery({
+    queryKey: ["worker-types"],
+    queryFn: () => client.get("/worker-types").then((r) => r.data as WorkerType[]),
+  });
+}
+
+export function useCreateWorkerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string }) =>
+      client.post("/worker-types", data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["worker-types"] }),
+  });
+}
+
+export function useUpdateWorkerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<WorkerType> }) =>
+      client.patch(`/worker-types/${id}`, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["worker-types"] }),
+  });
+}
+
+export function useDeleteWorkerType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => client.delete(`/worker-types/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["worker-types"] }),
+  });
+}
+
+/* Backup */
+export function useBackups() {
+  return useQuery({
+    queryKey: ["backups"],
+    queryFn: () => client.get("/backup").then((r) => r.data as BackupInfo[]),
+  });
+}
+
+export function useCreateBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => client.post("/backup").then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["backups"] }),
+  });
+}
+
+export function useRestoreBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (filename: string) => client.post(`/backup/restore/${filename}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["backups"] });
+      qc.invalidateQueries();
+    },
   });
 }
 

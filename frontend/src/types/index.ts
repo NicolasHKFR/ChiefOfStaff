@@ -4,14 +4,11 @@ export interface Worker {
   first_name: string;
   last_name: string;
   photo_url?: string;
-  email?: string;
-  phone?: string;
   team_id?: number;
   start_date?: string;
   end_date?: string;
   status: string;
   office_location?: string;
-  contract_end_date?: string;
   custom_fields?: Record<string, unknown>;
 }
 
@@ -46,6 +43,59 @@ export interface AuditLog {
   new_value?: string;
   changed_by: number;
   changed_at?: string;
+}
+
+export interface QualityCheck {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface QCFile {
+  id: number;
+  quality_check_id: number;
+  original_filename: string;
+  uploaded_at?: string;
+  row_count?: number;
+}
+
+export interface QCCheck {
+  id: number;
+  quality_check_id: number;
+  check_type: string;
+  status: string;
+  summary?: string;
+  details_json?: Record<string, unknown>;
+  created_at?: string;
+}
+
+export interface QualityCheckDetail extends QualityCheck {
+  files: QCFile[];
+  checks: QCCheck[];
+}
+
+export interface WorkerType {
+  id: number;
+  name: string;
+}
+
+export interface Location {
+  id: number;
+  name: string;
+  address?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  created_at?: string;
+}
+
+export interface BackupInfo {
+  filename: string;
+  size: number;
+  created_at: string;
 }
 
 export interface OrgChartTeamNode {

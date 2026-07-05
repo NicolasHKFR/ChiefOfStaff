@@ -12,14 +12,11 @@ class Worker(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     photo_url = Column(String(500), nullable=True)
-    email = Column(String(255), nullable=True, unique=True)
-    phone = Column(String(50), nullable=True)
     team_id = Column(Integer, ForeignKey("team.id"), nullable=True)
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
     status = Column(String(20), nullable=False, default="Active")
     office_location = Column(String(255), nullable=True)
-    contract_end_date = Column(Date, nullable=True)
     custom_fields = Column(JSON, nullable=True)
 
     def full_name(self):

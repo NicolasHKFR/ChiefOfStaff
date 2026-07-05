@@ -79,13 +79,11 @@ async def seed_db(db: AsyncSession):
     await db.flush()
 
     ceo = Worker(type="Employee", first_name="Alice", last_name="CEO",
-                 email="ceo@test.com",
                  start_date=date(2020, 1, 1), status="Active")
     db.add(ceo)
     await db.flush()
 
     mgr = Worker(type="Employee", first_name="Bob", last_name="Manager",
-                 email="bob@test.com",
                  start_date=date(2021, 1, 1),
                  status="Active")
     db.add(mgr)
@@ -101,14 +99,12 @@ async def seed_db(db: AsyncSession):
     await db.flush()
 
     ic = Worker(type="Employee", first_name="Charlie", last_name="IC",
-                email="charlie@test.com",
                 team_id=frontend.id, start_date=date(2022, 6, 15),
                 status="Active")
     db.add(ic)
     await db.flush()
 
     contractor = Worker(type="Contractor", first_name="Diana", last_name="Contractor",
-                        email="diana@test.com",
                         team_id=backend_t.id,
                         start_date=date(2023, 1, 1), end_date=date(2024, 12, 31),
                         status="Active")
@@ -116,7 +112,6 @@ async def seed_db(db: AsyncSession):
     await db.flush()
 
     terminated = Worker(type="Employee", first_name="Eve", last_name="Gone",
-                        email="eve@test.com",
                         start_date=date(2019, 1, 1), end_date=date(2023, 6, 1),
                         status="Terminated")
     db.add(terminated)

@@ -8,7 +8,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconCalendarTime, IconChartBar, IconFileDescription, IconHierarchy2, IconPaperclip, IconSitemap, IconSun, IconTools, IconUsers, IconUsersGroup } from "@tabler/icons-react";
+import { IconCalendarTime, IconChartBar, IconClipboardCheck, IconFileDescription, IconHierarchy2, IconMap2, IconPaperclip, IconSettings, IconSitemap, IconSun, IconTools, IconUsers, IconUsersGroup } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -16,10 +16,13 @@ const navItems = [
   { label: "Org Chart", icon: IconHierarchy2, path: "/org-chart" },
   { label: "Teams", icon: IconUsersGroup, path: "/teams" },
   { label: "Team Chart", icon: IconSitemap, path: "/team-chart" },
+  { label: "Quality Checks", icon: IconClipboardCheck, path: "/quality-checks" },
+  { label: "Map World", icon: IconMap2, path: "/map-world" },
   { label: "Presence", icon: IconCalendarTime, path: "/presence" },
   { label: "Skills", icon: IconTools, path: "/skills" },
   { label: "Documents", icon: IconPaperclip, path: "/documents" },
   { label: "Dashboard", icon: IconChartBar, path: "/dashboard" },
+  { label: "Settings", icon: IconSettings, path: "/settings" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
