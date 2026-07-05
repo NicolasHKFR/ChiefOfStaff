@@ -1,10 +1,9 @@
 import { Card, Group, RingProgress, SimpleGrid, Table, Text, Title } from "@mantine/core";
-import { useHeadcountReport, useLeaveStats, useSalaryReport, useWorkers } from "../api/hooks";
+import { useHeadcountReport, useLeaveStats, useWorkers } from "../api/hooks";
 
 export default function Dashboard() {
   const { data: workers } = useWorkers();
   const { data: headcount } = useHeadcountReport();
-  const { data: salary } = useSalaryReport();
   const { data: leaveStats } = useLeaveStats();
 
   const activeWorkers = workers?.filter((w) => w.status === "Active") || [];
@@ -46,28 +45,6 @@ export default function Dashboard() {
               />
             </Group>
           )}
-        </Card>
-
-        <Card withBorder>
-          <Title order={4} mb="sm">Salary by Department</Title>
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Dept ID</Table.Th>
-                <Table.Th>Avg Salary</Table.Th>
-                <Table.Th>Total</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {salary?.map((s: any) => (
-                <Table.Tr key={s.department_id}>
-                  <Table.Td>{s.department_id}</Table.Td>
-                  <Table.Td>${Number(s.avg_salary).toLocaleString()}</Table.Td>
-                  <Table.Td>${Number(s.total_salary).toLocaleString()}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
         </Card>
 
         <Card withBorder>

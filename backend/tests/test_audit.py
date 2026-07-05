@@ -63,7 +63,7 @@ async def test_audit_skill_not_logged(client, seed_db):
 async def test_audit_ordered_by_date(client, seed_db):
     ic = seed_db["ic"]
     await client.patch(f"/workers/{ic.id}", json={"job_title": "Senior Engineer"})
-    await client.patch(f"/workers/{ic.id}", json={"annual_salary": 120000})
+    await client.patch(f"/workers/{ic.id}", json={"office_location": "HQ"})
     resp = await client.get(f"/audit-log/Worker/{ic.id}")
     data = resp.json()
     assert len(data) >= 2

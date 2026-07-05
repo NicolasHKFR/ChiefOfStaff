@@ -121,15 +121,11 @@ async def test_create_worker_contractor(client, seed_db):
         "first_name": "Ext",
         "last_name": "Worker",
         "email": "ext@test.com",
-        "supplier_agency_name": "ExtStaff",
-        "rate_type": "Hourly",
-        "rate_amount": 100,
     }
     resp = await client.post("/workers", json=payload)
     assert resp.status_code == 201
     data = resp.json()
-    assert data["supplier_agency_name"] == "ExtStaff"
-    assert data["rate_amount"] == 100.0
+    assert data["type"] == "Contractor"
 
 
 @pytest.mark.asyncio

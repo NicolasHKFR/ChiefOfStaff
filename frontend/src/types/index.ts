@@ -15,13 +15,7 @@ export interface Worker {
   end_date?: string;
   status: string;
   office_location?: string;
-  supplier_agency_name?: string;
   contract_end_date?: string;
-  rate_type?: string;
-  rate_amount?: number;
-  annual_salary?: number;
-  daily_rate?: number;
-  hourly_rate?: number;
   custom_fields?: Record<string, unknown>;
 }
 

@@ -215,13 +215,6 @@ export function useHeadcountReport() {
   });
 }
 
-export function useSalaryReport() {
-  return useQuery({
-    queryKey: ["report", "salary"],
-    queryFn: () => client.get("/reports/salary").then((r) => r.data),
-  });
-}
-
 export function useLeaveStats() {
   return useQuery({
     queryKey: ["report", "leave-stats"],

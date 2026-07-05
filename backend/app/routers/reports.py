@@ -30,29 +30,6 @@ async def headcount_report(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get("/salary")
-async def salary_report(db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(
-        select(
-            Worker.department_id,
-            func.avg(Worker.annual_salary),
-            func.sum(Worker.annual_salary),
-            func.count(Worker.id),
-        )
-        .where(Worker.status == "Active", Worker.annual_salary.isnot(None))
-        .group_by(Worker.department_id)
-    )).all()
-    return [
-        {
-            "department_id": r[0],
-            "avg_salary": float(r[1]) if r[1] else 0,
-            "total_salary": float(r[2]) if r[2] else 0,
-            "count": r[3],
-        }
-        for r in rows
-    ]
-
-
 @router.get("/leave-stats")
 async def leave_stats_report(db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(

@@ -52,19 +52,19 @@ async def seed():
             type="Employee", first_name="Jordan", last_name="Patel",
             email="jordan@cosixis.io", job_title="CTO",
             department_id=eng.id, manager_id=ceo.id,
-            start_date=date(2020, 3, 1), status="Active", annual_salary=180000,
+            start_date=date(2020, 3, 1), status="Active",
         )
         cmo = Worker(
             type="Employee", first_name="Morgan", last_name="Taylor",
             email="morgan@cosixis.io", job_title="CMO",
             department_id=mkt.id, manager_id=ceo.id,
-            start_date=date(2020, 3, 1), status="Active", annual_salary=175000,
+            start_date=date(2020, 3, 1), status="Active",
         )
         hr_head = Worker(
             type="Employee", first_name="Sam", last_name="Williams",
             email="sam@cosixis.io", job_title="Head of People",
             department_id=hr.id, manager_id=ceo.id,
-            start_date=date(2021, 6, 1), status="Active", annual_salary=140000,
+            start_date=date(2021, 6, 1), status="Active",
         )
         db.add_all([cto, cmo, hr_head])
         await db.flush()
@@ -72,14 +72,13 @@ async def seed():
         engineers = [
             Worker(type="Employee", first_name="Riley", last_name="Kim", email="riley@cosixis.io",
                    job_title="Senior Frontend Engineer", department_id=eng.id, team_id=frontend.id,
-                   manager_id=cto.id, start_date=date(2021, 2, 1), status="Active", annual_salary=135000),
+                   manager_id=cto.id, start_date=date(2021, 2, 1), status="Active"),
             Worker(type="Employee", first_name="Casey", last_name="Nguyen", email="casey@cosixis.io",
                    job_title="Backend Engineer", department_id=eng.id, team_id=backend.id,
-                   manager_id=cto.id, start_date=date(2022, 4, 1), status="Active", annual_salary=120000),
+                   manager_id=cto.id, start_date=date(2022, 4, 1), status="Active"),
             Worker(type="Contractor", first_name="Drew", last_name="Martinez", email="drew@cosixis.io",
                    job_title="DevOps Engineer", department_id=eng.id, team_id=backend.id,
-                   manager_id=cto.id, start_date=date(2023, 1, 1), status="Active",
-                   supplier_agency_name="CloudStaff Inc.", rate_type="Daily", rate_amount=650),
+                   manager_id=cto.id, start_date=date(2023, 1, 1), status="Active"),
         ]
         db.add_all(engineers)
         await db.flush()
@@ -87,10 +86,10 @@ async def seed():
         marketers = [
             Worker(type="Employee", first_name="Jamie", last_name="Rodriguez", email="jamie@cosixis.io",
                    job_title="Content Lead", department_id=mkt.id, team_id=content.id,
-                   manager_id=cmo.id, start_date=date(2022, 9, 1), status="Active", annual_salary=95000),
+                   manager_id=cmo.id, start_date=date(2022, 9, 1), status="Active"),
             Worker(type="Employee", first_name="Taylor", last_name="Brown", email="taylor@cosixis.io",
                    job_title="Marketing Designer", department_id=mkt.id, team_id=content.id,
-                   manager_id=cmo.id, start_date=date(2023, 6, 15), status="Active", annual_salary=85000),
+                   manager_id=cmo.id, start_date=date(2023, 6, 15), status="Active"),
         ]
         db.add_all(marketers)
         await db.flush()
@@ -98,7 +97,7 @@ async def seed():
         ops = [
             Worker(type="Employee", first_name="Avery", last_name="Garcia", email="avery@cosixis.io",
                    job_title="Recruiter", department_id=hr.id, team_id=recruiting.id,
-                   manager_id=hr_head.id, start_date=date(2022, 1, 10), status="Active", annual_salary=75000),
+                   manager_id=hr_head.id, start_date=date(2022, 1, 10), status="Active"),
         ]
         db.add_all(ops)
         await db.flush()

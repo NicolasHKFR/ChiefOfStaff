@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Date, ForeignKey, Integer, Numeric, String
+from sqlalchemy import JSON, Column, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -23,13 +23,7 @@ class Worker(Base):
     end_date = Column(Date, nullable=True)
     status = Column(String(20), nullable=False, default="Active")
     office_location = Column(String(255), nullable=True)
-    supplier_agency_name = Column(String(255), nullable=True)
     contract_end_date = Column(Date, nullable=True)
-    rate_type = Column(String(20), nullable=True)
-    rate_amount = Column(Numeric(12, 2), nullable=True)
-    annual_salary = Column(Numeric(12, 2), nullable=True)
-    daily_rate = Column(Numeric(12, 2), nullable=True)
-    hourly_rate = Column(Numeric(12, 2), nullable=True)
     custom_fields = Column(JSON, nullable=True)
 
     manager = relationship("Worker", remote_side=[id], backref="direct_reports")

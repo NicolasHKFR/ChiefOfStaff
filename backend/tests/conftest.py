@@ -101,15 +101,15 @@ async def seed_db(db: AsyncSession):
                  email="bob@test.com", job_title="Engineering Manager",
                  department_id=eng.id, team_id=frontend.id,
                  manager_id=ceo.id, start_date=date(2021, 1, 1),
-                 status="Active", annual_salary=150000)
+                  status="Active")
     db.add(mgr)
     await db.flush()
 
     ic = Worker(type="Employee", first_name="Charlie", last_name="IC",
                 email="charlie@test.com", job_title="Engineer",
                 department_id=eng.id, team_id=frontend.id,
-                manager_id=mgr.id, start_date=date(2022, 6, 15),
-                status="Active", annual_salary=100000)
+                 manager_id=mgr.id, start_date=date(2022, 6, 15),
+                 status="Active")
     db.add(ic)
     await db.flush()
 
@@ -117,8 +117,7 @@ async def seed_db(db: AsyncSession):
                         email="diana@test.com", job_title="DevOps",
                         department_id=eng.id, team_id=backend_t.id,
                         manager_id=mgr.id, start_date=date(2023, 1, 1),
-                        end_date=date(2024, 12, 31), status="Active",
-                        supplier_agency_name="Agency Inc.", rate_type="Daily", rate_amount=500)
+                        end_date=date(2024, 12, 31), status="Active")
     db.add(contractor)
     await db.flush()
 

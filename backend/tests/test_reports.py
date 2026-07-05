@@ -20,17 +20,6 @@ async def test_headcount_excludes_terminated(client, seed_db):
 
 
 @pytest.mark.asyncio
-async def test_salary_report(client, seed_db):
-    resp = await client.get("/reports/salary")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert len(data) >= 1
-    for dept in data:
-        assert dept["avg_salary"] > 0
-        assert dept["total_salary"] > 0
-
-
-@pytest.mark.asyncio
 async def test_leave_stats(client, seed_db):
     resp = await client.get("/reports/leave-stats")
     assert resp.status_code == 200
@@ -44,6 +33,6 @@ async def test_leave_stats(client, seed_db):
 
 @pytest.mark.asyncio
 async def test_reports_empty_db(client):
-    for path in ["/reports/headcount", "/reports/salary", "/reports/leave-stats"]:
+    for path in ["/reports/headcount", "/reports/leave-stats"]:
         resp = await client.get(path)
         assert resp.status_code == 200

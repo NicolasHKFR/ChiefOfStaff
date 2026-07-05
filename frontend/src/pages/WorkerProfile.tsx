@@ -6,10 +6,7 @@ import {
   Text,
   TextInput,
   Select,
-  Textarea,
   Title,
-  NumberInput,
-  Divider,
   LoadingOverlay,
   Alert,
 } from "@mantine/core";
@@ -31,10 +28,6 @@ export default function WorkerProfile() {
       first_name: "", last_name: "", email: "", phone: "",
       job_title: "", type: "Employee", employment_type: "",
       status: "Active", office_location: "",
-      annual_salary: undefined as number | undefined,
-      daily_rate: undefined as number | undefined,
-      hourly_rate: undefined as number | undefined,
-      supplier_agency_name: "", rate_type: "",
     },
   });
 
@@ -78,24 +71,6 @@ export default function WorkerProfile() {
             <TextInput label="Office Location" {...form.getInputProps("office_location")} />
           </SimpleGrid>
         </Card>
-
-        {worker.type === "Employee" && (
-          <Card withBorder mb="md">
-            <Title order={4} mb="sm">Compensation</Title>
-            <NumberInput label="Annual Salary ($)" {...form.getInputProps("annual_salary")} />
-          </Card>
-        )}
-
-        {worker.type === "Contractor" && (
-          <Card withBorder mb="md">
-            <Title order={4} mb="sm">Contractor Details</Title>
-            <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <TextInput label="Supplier Agency" {...form.getInputProps("supplier_agency_name")} />
-              <Select label="Rate Type" data={["Daily", "Hourly"]} {...form.getInputProps("rate_type")} />
-              <NumberInput label="Rate ($)" {...form.getInputProps("rate_amount")} />
-            </SimpleGrid>
-          </Card>
-        )}
 
         <Group>
           <Button type="submit" loading={updateWorker.isPending}>Save</Button>

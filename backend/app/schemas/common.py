@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from decimal import Decimal
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -37,13 +36,7 @@ class WorkerOut(BaseModel):
     end_date: Optional[date] = None
     status: str = "Active"
     office_location: Optional[str] = None
-    supplier_agency_name: Optional[str] = None
     contract_end_date: Optional[date] = None
-    rate_type: Optional[str] = None
-    rate_amount: Optional[float] = None
-    annual_salary: Optional[float] = None
-    daily_rate: Optional[float] = None
-    hourly_rate: Optional[float] = None
     custom_fields: Optional[dict] = None
 
 
@@ -63,13 +56,7 @@ class WorkerCreate(BaseModel):
     end_date: Optional[date] = None
     status: str = "Active"
     office_location: Optional[str] = None
-    supplier_agency_name: Optional[str] = None
     contract_end_date: Optional[date] = None
-    rate_type: Optional[str] = None
-    rate_amount: Optional[float] = None
-    annual_salary: Optional[float] = None
-    daily_rate: Optional[float] = None
-    hourly_rate: Optional[float] = None
     custom_fields: Optional[dict] = None
 
 
@@ -89,13 +76,7 @@ class WorkerUpdate(BaseModel):
     end_date: Optional[date] = None
     status: Optional[str] = None
     office_location: Optional[str] = None
-    supplier_agency_name: Optional[str] = None
     contract_end_date: Optional[date] = None
-    rate_type: Optional[str] = None
-    rate_amount: Optional[float] = None
-    annual_salary: Optional[float] = None
-    daily_rate: Optional[float] = None
-    hourly_rate: Optional[float] = None
     custom_fields: Optional[dict] = None
 
 
